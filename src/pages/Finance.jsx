@@ -157,18 +157,21 @@ export default function Finance() {
     load()
   }, [])
 
-  // ── Realtime — see each other's changes live ────────────────────────────
+  // ── Realtime — only sync changes made by the OTHER person ────────────────
   useEffect(() => {
     const channel = supabase
       .channel('transactions-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, payload => {
-        if (payload.eventType === 'INSERT') {
-          setTxns(prev => [payload.new, ...prev])
-        } else if (payload.eventType === 'UPDATE') {
-          setTxns(prev => prev.map(t => t.id === payload.new.id ? payload.new : t))
-        } else if (payload.eventType === 'DELETE') {
-          setTxns(prev => prev.filter(t => t.id !== payload.old.id))
-        }
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, payload => {
+        setTxns(prev => {
+          if (prev.some(t => t.id === payload.new.id)) return prev
+          return [payload.new, ...prev]
+        })
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'transactions' }, payload => {
+        setTxns(prev => prev.map(t => t.id === payload.new.id ? payload.new : t))
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'transactions' }, payload => {
+        setTxns(prev => prev.filter(t => t.id !== payload.old.id))
       })
       .subscribe()
     return () => supabase.removeChannel(channel)
