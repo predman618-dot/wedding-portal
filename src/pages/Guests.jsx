@@ -133,7 +133,16 @@ export default function Guests() {
   const [saving,    setSaving]   = useState(false)
   const [error,     setError]    = useState(null)
   const [modal,     setModal]    = useState(null)   // null | 'add' | guest object
-  const [filter,    setFilter]   = useState('all')  // all | paul | jordan
+  const [filters,   setFilters]  = useState(new Set())  // empty = show all
+
+  function toggleFilter(val) {
+    setFilters(prev => {
+      const next = new Set(prev)
+      if (next.has(val)) next.delete(val)
+      else next.add(val)
+      return next
+    })
+  }
   const [search,    setSearch]   = useState('')
   const [sortKey,   setSortKey]  = useState('last_name')
   const [sortDir,   setSortDir]  = useState('asc')
@@ -202,10 +211,17 @@ export default function Guests() {
   // ── Derived ─────────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     let g = guests
-    if (filter === 'paul')   g = g.filter(x => x.invited_by === 'Paul')
-    if (filter === 'jordan') g = g.filter(x => x.invited_by === 'Jordan')
-    if (filter === 'a')      g = g.filter(x => x.invite_list !== 'B')
-    if (filter === 'b')      g = g.filter(x => x.invite_list === 'B')
+    if (filters.size > 0) {
+      g = g.filter(x => {
+        const matchSide = !filters.has('paul') && !filters.has('jordan') ||
+          (filters.has('paul')   && x.invited_by === 'Paul') ||
+          (filters.has('jordan') && x.invited_by === 'Jordan')
+        const matchList = !filters.has('a') && !filters.has('b') ||
+          (filters.has('a') && x.invite_list !== 'B') ||
+          (filters.has('b') && x.invite_list === 'B')
+        return matchSide && matchList
+      })
+    }
     if (search) {
       const q = search.toLowerCase()
       g = g.filter(x => `${x.first_name} ${x.last_name}`.toLowerCase().includes(q) || (x.relationship||'').toLowerCase().includes(q))
@@ -218,7 +234,7 @@ export default function Guests() {
       return 0
     })
     return g
-  }, [guests, filter, search, sortKey, sortDir])
+  }, [guests, filters, search, sortKey, sortDir])
 
   const stats = useMemo(() => {
     const total    = guests.length
@@ -276,25 +292,53 @@ export default function Guests() {
 
       {/* Filters + search */}
       <div style={{ display:'flex', gap:8, marginBottom:'1rem', flexWrap:'wrap', alignItems:'center' }}>
-        {[['all','All guests'],['paul',"Paul's side"],['jordan',"Jordan's side"],['a','A List'],['b','B List']].map(([val, label]) => (
-          <button key={val} onClick={() => setFilter(val)}
-            style={{
-              fontFamily:'var(--font-sans)', fontSize:12, padding:'5px 14px',
-              borderRadius:99, border:'1px solid var(--border2)', cursor:'pointer',
-              background: filter===val ? 'var(--text)' : 'transparent',
-              color: filter===val ? 'var(--bg)' : 'var(--text2)',
-              transition:'all 0.12s',
-            }}>
-            {label}
+        {[
+          { val:'paul',   label:"Paul's side", count: guests.filter(g => g.invited_by === 'Paul').length },
+          { val:'jordan', label:"Jordan's side",count: guests.filter(g => g.invited_by === 'Jordan').length },
+          { val:'a',      label:'A List',       count: guests.filter(g => g.invite_list !== 'B').length },
+          { val:'b',      label:'B List',       count: guests.filter(g => g.invite_list === 'B').length },
+        ].map(({ val, label, count }) => {
+          const active = filters.has(val)
+          return (
+            <button key={val} onClick={() => toggleFilter(val)}
+              style={{
+                fontFamily:'var(--font-sans)', fontSize:12, padding:'5px 12px',
+                borderRadius:99, border: active ? '1px solid var(--text)' : '1px solid var(--border2)',
+                cursor:'pointer', display:'flex', alignItems:'center', gap:6,
+                background: active ? 'var(--text)' : 'transparent',
+                color: active ? 'var(--bg)' : 'var(--text2)',
+                transition:'all 0.12s',
+              }}>
+              {label}
+              <span style={{
+                fontFamily:'var(--font-sans)', fontSize:10, fontWeight:600,
+                background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface2)',
+                color: active ? 'var(--bg)' : 'var(--text3)',
+                borderRadius:99, padding:'1px 6px', minWidth:18, textAlign:'center',
+              }}>{count}</span>
+            </button>
+          )
+        })}
+        {filters.size > 0 && (
+          <button onClick={() => setFilters(new Set())}
+            style={{ fontFamily:'var(--font-sans)', fontSize:11, color:'var(--text3)', background:'none', border:'none', cursor:'pointer', padding:'5px 4px', textDecoration:'underline' }}>
+            Clear
           </button>
-        ))}
-        <input
-          type="text"
-          placeholder="Search guests…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ marginLeft:'auto', padding:'5px 12px', border:'1px solid var(--border2)', borderRadius:99, background:'var(--surface)', color:'var(--text)', fontFamily:'var(--font-sans)', fontSize:12, width:200 }}
-        />
+        )}
+        <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:8 }}>
+          {(filters.size > 0 || search) && (
+            <span style={{ fontFamily:'var(--font-sans)', fontSize:12, color:'var(--text3)' }}>
+              Showing {filtered.length} of {guests.length}
+            </span>
+          )}
+          <input
+            type="text"
+            placeholder="Search guests…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ padding:'5px 12px', border:'1px solid var(--border2)', borderRadius:99, background:'var(--surface)', color:'var(--text)', fontFamily:'var(--font-sans)', fontSize:12, width:200 }}
+          />
+        </div>
       </div>
 
       {/* Table */}
@@ -303,8 +347,8 @@ export default function Guests() {
           <thead>
             <tr>
               {[
-                { label:'Name',       key:'last_name'    },
                 { label:'List',       key:'invite_list'  },
+                { label:'Name',       key:'last_name'    },
                 { label:'Household',  key:'household'    },
                 { label:'Invited by', key:'invited_by'   },
                 { label:'Relationship',key:'relationship'},
@@ -339,15 +383,15 @@ export default function Guests() {
                   onMouseEnter={e => e.currentTarget.querySelectorAll('td').forEach(td => td.style.background='var(--surface2)')}
                   onMouseLeave={e => e.currentTarget.querySelectorAll('td').forEach(td => td.style.background='')}
                 >
-                  <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', fontWeight:500, whiteSpace:'nowrap' }}>
-                    {g.first_name} {g.last_name || ''}
-                    {g.plus_ones && <span style={{ marginLeft:6, fontSize:10, color:'var(--text3)', cursor:'help' }} title={`Plus-ones: ${g.plus_ones}`}>👥</span>}
-                    {g.notes && <span style={{ marginLeft:4, fontSize:10, color:'var(--text3)', cursor:'help' }} title={g.notes}>📝</span>}
-                  </td>
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', textAlign:'center' }}>
                     <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:22, height:22, borderRadius:'50%', fontSize:11, fontWeight:600, background: g.invite_list === 'B' ? 'var(--amber-light)' : 'var(--green-light)', color: g.invite_list === 'B' ? 'var(--amber-text)' : 'var(--green-text)' }}>
                       {g.invite_list || 'A'}
                     </span>
+                  </td>
+                  <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', fontWeight:500, whiteSpace:'nowrap' }}>
+                    {g.first_name} {g.last_name || ''}
+                    {g.plus_ones && <span style={{ marginLeft:6, fontSize:10, color:'var(--text3)', cursor:'help' }} title={`Plus-ones: ${g.plus_ones}`}>👥</span>}
+                    {g.notes && <span style={{ marginLeft:4, fontSize:10, color:'var(--text3)', cursor:'help' }} title={g.notes}>📝</span>}
                   </td>
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', color:'var(--text2)', fontSize:12, whiteSpace:'nowrap' }}>
                     {g.household || '—'}
@@ -360,19 +404,29 @@ export default function Guests() {
                   </td>
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', color:'var(--text2)', fontSize:12 }}>{g.age || '—'}</td>
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)' }}>
-                    {g.save_the_date
-                      ? <span style={{ color:'var(--green)', fontSize:12 }}>✓</span>
-                      : <span style={{ color:'var(--text3)', fontSize:12 }}>—</span>}
+                    <select value={g.save_the_date || ''} onChange={e => saveGuest({ ...g, save_the_date: e.target.value || null })}
+                      style={{ fontFamily:'var(--font-sans)', fontSize:12, background:'transparent', border:'none', color: g.save_the_date === 'Sent' ? 'var(--green)' : 'var(--text3)', cursor:'pointer', outline:'none' }}>
+                      <option value="">—</option>
+                      <option value="Sent">Sent</option>
+                      <option value="Not yet">Not yet</option>
+                    </select>
                   </td>
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)' }}>
-                    {g.invitation
-                      ? <span style={{ color:'var(--green)', fontSize:12 }}>✓</span>
-                      : <span style={{ color:'var(--text3)', fontSize:12 }}>—</span>}
+                    <select value={g.invitation || ''} onChange={e => saveGuest({ ...g, invitation: e.target.value || null })}
+                      style={{ fontFamily:'var(--font-sans)', fontSize:12, background:'transparent', border:'none', color: g.invitation === 'Sent' ? 'var(--green)' : 'var(--text3)', cursor:'pointer', outline:'none' }}>
+                      <option value="">—</option>
+                      <option value="Sent">Sent</option>
+                      <option value="Not yet">Not yet</option>
+                    </select>
                   </td>
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)' }}>
-                    {g.response
-                      ? <span className="chip" style={{ background: rsc.bg, color: rsc.color }}>{g.response}</span>
-                      : <span style={{ color:'var(--text3)', fontSize:12 }}>—</span>}
+                    <select value={g.response || ''} onChange={e => saveGuest({ ...g, response: e.target.value || null })}
+                      style={{ fontFamily:'var(--font-sans)', fontSize:12, background:'transparent', border:'none', color: g.response === 'Yes' ? 'var(--green-text)' : g.response === 'No' ? '#dc2626' : g.response === 'Maybe' ? 'var(--amber-text)' : 'var(--text3)', cursor:'pointer', outline:'none', fontWeight: g.response ? 500 : 400 }}>
+                      <option value="">—</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                      <option value="Maybe">Maybe</option>
+                    </select>
                   </td>
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', color:'var(--text2)', textAlign:'center' }}>
                     {g.attending ?? '—'}
