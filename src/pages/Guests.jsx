@@ -171,22 +171,31 @@ export default function Guests() {
   async function saveGuest(data) {
     setSaving(true)
     if (data.id) {
+      // Optimistic update
+      setGuests(prev => prev.map(g => g.id === data.id ? { ...g, ...data } : g))
+      setModal(null)
       const { id, ...rest } = data
       const { error } = await supabase.from('guests').update(rest).eq('id', id)
-      if (error) setError('Could not update guest.')
+      if (error) { setError('Could not update guest.'); setGuests(prev => prev.map(g => g.id === data.id ? g : g)) }
     } else {
-      const { error } = await supabase.from('guests').insert([data])
-      if (error) setError('Could not add guest.')
+      const tempId = Date.now()
+      const newGuest = { ...data, id: tempId }
+      setGuests(prev => [...prev, newGuest].sort((a,b) => (a.last_name||'').localeCompare(b.last_name||'')))
+      setModal(null)
+      const { data: inserted, error } = await supabase.from('guests').insert([data]).select().single()
+      if (error) { setError('Could not add guest.'); setGuests(prev => prev.filter(g => g.id !== tempId)) }
+      else setGuests(prev => prev.map(g => g.id === tempId ? inserted : g))
     }
     setSaving(false)
-    setModal(null)
   }
 
   // ── Delete ──────────────────────────────────────────────────────────────
   async function deleteGuest(id) {
     if (!confirm('Remove this guest?')) return
+    const removed = guests.find(g => g.id === id)
+    setGuests(prev => prev.filter(g => g.id !== id))
     const { error } = await supabase.from('guests').delete().eq('id', id)
-    if (error) setError('Could not delete guest.')
+    if (error) { setError('Could not delete guest.'); setGuests(prev => [...prev, removed].sort((a,b) => (a.last_name||'').localeCompare(b.last_name||''))) }
   }
 
   // ── Derived ─────────────────────────────────────────────────────────────

@@ -184,7 +184,10 @@ export default function Finance() {
   // ── Add transaction ─────────────────────────────────────────────────────
   async function addTxn(data) {
     setSaving(true)
-    const { error } = await supabase.from('transactions').insert([{
+    const newTxn = { ...data, id: Date.now() }
+    setTxns(prev => [newTxn, ...prev])
+    setModal(false)
+    const { data: inserted, error } = await supabase.from('transactions').insert([{
       date:   data.date,
       "desc": data.desc,
       cat:    data.cat,
@@ -192,24 +195,27 @@ export default function Finance() {
       paid:   data.paid,
       split:  data.split,
       reimb:  data.reimb,
-    }])
-    if (error) setError('Could not save transaction.')
+    }]).select().single()
+    if (error) { setError('Could not save transaction.'); setTxns(prev => prev.filter(t => t.id !== newTxn.id)) }
+    else setTxns(prev => prev.map(t => t.id === newTxn.id ? inserted : t))
     setSaving(false)
-    setModal(false)
   }
 
   // ── Toggle reimbursement ────────────────────────────────────────────────
   async function toggleReimb(id, current) {
     if (current === 'na') return
     const next = current === 'pending' ? 'paid' : 'pending'
+    setTxns(prev => prev.map(t => t.id === id ? { ...t, reimb: next } : t))
     const { error } = await supabase.from('transactions').update({ reimb: next }).eq('id', id)
-    if (error) setError('Could not update reimbursement.')
+    if (error) { setError('Could not update reimbursement.'); setTxns(prev => prev.map(t => t.id === id ? { ...t, reimb: current } : t)) }
   }
 
   // ── Delete transaction ──────────────────────────────────────────────────
   async function delTxn(id) {
+    const removed = txns.find(t => t.id === id)
+    setTxns(prev => prev.filter(t => t.id !== id))
     const { error } = await supabase.from('transactions').delete().eq('id', id)
-    if (error) setError('Could not delete transaction.')
+    if (error) { setError('Could not delete transaction.'); setTxns(prev => [...prev, removed]) }
   }
 
   // ── Derived values ──────────────────────────────────────────────────────
