@@ -32,7 +32,7 @@ function rsvpColor(r) {
 }
 
 // ── Guest Modal (Add + Edit) ──────────────────────────────────────────────
-function GuestModal({ guest, onClose, onSave, saving }) {
+function GuestModal({ guest, onClose, onSave, saving, allGuests }) {
   const [form, setForm] = useState(guest ? { ...EMPTY_FORM, ...guest } : { ...EMPTY_FORM })
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -72,7 +72,22 @@ function GuestModal({ guest, onClose, onSave, saving }) {
           {field('Email', 'email', 'email')}
           {field('Address', 'address')}
           {field('Household', 'household')}
-          {field('Couple # (pairs rows visually)', 'couple_id', 'number')}
+          <div className="field">
+            <label>Paired with (couple)</label>
+            <select value={form.couple_id ?? ''} onChange={e => set('couple_id', e.target.value === '' ? '' : e.target.value === 'new' ? Math.max(0, ...allGuests.map(g => g.couple_id || 0)) + 1 : parseInt(e.target.value))}>
+              <option value="">— No pairing</option>
+              <option value="new">+ Create new couple</option>
+              {[...new Map(allGuests.filter(g => g.couple_id && g.id !== (guest?.id)).map(g => [g.couple_id, g])).values()]
+                .sort((a,b) => a.couple_id - b.couple_id)
+                .map(g => (
+                  <option key={g.couple_id} value={g.couple_id}>
+                    Pair with {g.first_name} {g.last_name || ''} (#{g.couple_id})
+                  </option>
+                ))
+              }
+            </select>
+            {form.couple_id && <div className="field-hint">Couple #{form.couple_id}</div>}
+          </div>
           {field('Invited by', 'invited_by', 'text', ['Paul', 'Jordan'])}
           {field('Age group', 'age', 'text', AGE_GROUPS)}
           {field('Relationship', 'relationship', 'text', RELATIONSHIPS)}
@@ -484,6 +499,7 @@ export default function Guests() {
           onClose={() => setModal(null)}
           onSave={saveGuest}
           saving={saving}
+          allGuests={guests}
         />
       )}
 
