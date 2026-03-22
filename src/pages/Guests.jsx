@@ -411,13 +411,28 @@ export default function Guests() {
               const rc  = relColor(g.relationship)
               const rsc = rsvpColor(g.response)
               const inv = g.invited_by === 'Paul' ? 'paul' : 'jordan'
-              const coupleColors = ['#e8f2fc','#faeaf2','#e4f5ee','#fef3e0','#f0ede8','#e8eaf6','#fce4ec','#e0f7fa']
+              const coupleColors = [
+                '#2e7fd4','#c04d7a','#1e9e6e','#c47a10','#7b5ea7','#d4572e','#2e9ec4','#8ea82e',
+                '#5271c4','#c4852e','#2ec48a','#c42e6e','#2e7fb8','#a87b2e','#2eb87b','#b82e7b',
+                '#4a90d9','#d9704a','#4ad98a','#d94a9a','#4ab8d9','#d9c44a','#7a4ad9','#4ad95a',
+                '#1a5fa0','#8c2f58','#0f6647','#7a4c08','#5c3d8a','#a03a1a','#1a7a9a','#6a7a0f',
+                '#3a6eb5','#b56e3a','#3ab56e','#b53a8e','#3a9cb5','#b5a83a','#6a3ab5','#3ab54a',
+                '#6baed6','#fd8d3c','#74c476','#e377c2','#17becf','#bcbd22','#9467bd','#8c564b',
+              ]
+              const coupleAccents = [
+                '#2e7fd4','#c04d7a','#1e9e6e','#c47a10','#7b5ea7','#d4572e','#2e9ec4','#8ea82e',
+                '#5271c4','#c4852e','#2ec48a','#c42e6e','#2e7fb8','#a87b2e','#2eb87b','#b82e7b',
+                '#4a90d9','#d9704a','#4ad98a','#d94a9a','#4ab8d9','#d9c44a','#7a4ad9','#4ad95a',
+                '#1a5fa0','#8c2f58','#0f6647','#7a4c08','#5c3d8a','#a03a1a','#1a7a9a','#6a7a0f',
+                '#3a6eb5','#b56e3a','#3ab56e','#b53a8e','#3a9cb5','#b5a83a','#6a3ab5','#3ab54a',
+                '#6baed6','#fd8d3c','#74c476','#e377c2','#17becf','#bcbd22','#9467bd','#8c564b',
+              ]
               const coupleColor = g.couple_id ? coupleColors[(g.couple_id - 1) % coupleColors.length] : null
               return (
                 <tr key={g.id}
                   onMouseEnter={e => e.currentTarget.querySelectorAll('td').forEach(td => td.style.background='var(--surface2)')}
                   onMouseLeave={e => e.currentTarget.querySelectorAll('td').forEach(td => td.style.background = '')}
-                  style={{ borderLeft: coupleColor ? `3px solid ${coupleColor === '#e8f2fc' ? 'var(--paul)' : coupleColor === '#faeaf2' ? 'var(--jordan)' : coupleColor === '#e4f5ee' ? 'var(--green)' : coupleColor === '#fef3e0' ? 'var(--amber)' : '#9e9e9e'}` : '3px solid transparent' }}
+                  style={{ borderLeft: g.couple_id ? `3px solid ${coupleAccents[(g.couple_id - 1) % coupleAccents.length]}` : '3px solid transparent' }}
                 >
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', textAlign:'center' }}>
                     <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:22, height:22, borderRadius:'50%', fontSize:11, fontWeight:600, background: g.invite_list === 'B' ? 'var(--amber-light)' : 'var(--green-light)', color: g.invite_list === 'B' ? 'var(--amber-text)' : 'var(--green-text)' }}>
