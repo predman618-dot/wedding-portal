@@ -134,6 +134,13 @@ export default function Guests() {
   const [modal,     setModal]    = useState(null)   // null | 'add' | guest object
   const [filter,    setFilter]   = useState('all')  // all | paul | jordan
   const [search,    setSearch]   = useState('')
+  const [sortKey,   setSortKey]  = useState('last_name')
+  const [sortDir,   setSortDir]  = useState('asc')
+
+  function handleSort(key) {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(key); setSortDir('asc') }
+  }
 
   // ── Load ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -191,8 +198,15 @@ export default function Guests() {
       const q = search.toLowerCase()
       g = g.filter(x => `${x.first_name} ${x.last_name}`.toLowerCase().includes(q) || (x.relationship||'').toLowerCase().includes(q))
     }
+    g = [...g].sort((a, b) => {
+      const av = (a[sortKey] ?? '').toString().toLowerCase()
+      const bv = (b[sortKey] ?? '').toString().toLowerCase()
+      if (av < bv) return sortDir === 'asc' ? -1 : 1
+      if (av > bv) return sortDir === 'asc' ? 1 : -1
+      return 0
+    })
     return g
-  }, [guests, filter, search])
+  }, [guests, filter, search, sortKey, sortDir])
 
   const stats = useMemo(() => {
     const total    = guests.length
@@ -274,8 +288,24 @@ export default function Guests() {
         <table style={{ width:'100%', borderCollapse:'collapse', fontFamily:'var(--font-sans)', fontSize:13, minWidth:800 }}>
           <thead>
             <tr>
-              {['Name','Household','Invited by','Relationship','Age','Save date','Invite','RSVP','Attending','Dietary','Table',''].map((h,i) => (
-                <th key={i} style={{ padding:'10px 14px', textAlign:'left', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'0.07em', color:'var(--text3)', background:'var(--surface2)', borderBottom:'1px solid var(--border)', whiteSpace:'nowrap' }}>{h}</th>
+              {[
+                { label:'Name',       key:'last_name'    },
+                { label:'Household',  key:'household'    },
+                { label:'Invited by', key:'invited_by'   },
+                { label:'Relationship',key:'relationship'},
+                { label:'Age',        key:'age'          },
+                { label:'Save date',  key:'save_the_date'},
+                { label:'Invite',     key:'invitation'   },
+                { label:'RSVP',       key:'response'     },
+                { label:'Attending',  key:'attending'    },
+                { label:'Dietary',    key:'dietary'      },
+                { label:'Table',      key:'table_num'    },
+                { label:'',           key:null           },
+              ].map(({ label, key }) => (
+                <th key={label} onClick={() => key && handleSort(key)}
+                  style={{ padding:'10px 14px', textAlign:'left', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'0.07em', color: key && sortKey===key ? 'var(--text)' : 'var(--text3)', background:'var(--surface2)', borderBottom:'1px solid var(--border)', whiteSpace:'nowrap', cursor: key ? 'pointer' : 'default', userSelect:'none' }}>
+                  {label}{key && sortKey===key ? (sortDir==='asc' ? ' ↑' : ' ↓') : ''}
+                </th>
               ))}
             </tr>
           </thead>
