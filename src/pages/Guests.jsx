@@ -211,7 +211,7 @@ export default function Guests() {
   )
 
   return (
-    <div className="page-content">
+    <div className="page-content" style={{ maxWidth: 1300 }}>
       <div className="page-header">
         <div>
           <h1 className="page-title">Guest List</h1>
