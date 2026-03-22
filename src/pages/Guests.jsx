@@ -12,7 +12,7 @@ const EMPTY_FORM = {
   save_the_date: '', invitation: '', response: '',
   attending: '', children: '',
   rehearsal_invited: '', rehearsal_going: '',
-  dietary: '', table_num: '', gift_desc: '', thankyou_sent: '', notes: '',
+  household: '', plus_ones: '', dietary: '', table_num: '', gift_desc: '', thankyou_sent: '', notes: '',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -71,6 +71,7 @@ function GuestModal({ guest, onClose, onSave, saving }) {
           {field('Last Name', 'last_name')}
           {field('Email', 'email', 'email')}
           {field('Address', 'address')}
+          {field('Household', 'household')}
           {field('Invited by', 'invited_by', 'text', ['Paul', 'Jordan'])}
           {field('Age group', 'age', 'text', AGE_GROUPS)}
           {field('Relationship', 'relationship', 'text', RELATIONSHIPS)}
@@ -110,6 +111,7 @@ function GuestModal({ guest, onClose, onSave, saving }) {
           {field('Gift received', 'gift_desc')}
           {field('Thank-you sent?', 'thankyou_sent', 'text', ['Yes', 'No'])}
         </div>
+        {field('Plus-ones / additional names', 'plus_ones')}
         {field('Notes', 'notes')}
 
         <div className="modal-actions">
@@ -196,12 +198,13 @@ export default function Guests() {
     const total    = guests.length
     const paulCt   = guests.filter(g => g.invited_by === 'Paul').length
     const jordanCt = guests.filter(g => g.invited_by === 'Jordan').length
-    const yes      = guests.filter(g => g.response === 'Yes').length
+    const yes      = guests.filter(g => g.response === 'Yes').reduce((sum, g) => sum + (g.attending || 0) + (g.children || 0), 0)
+    const yesGuests = guests.filter(g => g.response === 'Yes').length
     const no       = guests.filter(g => g.response === 'No').length
     const maybe    = guests.filter(g => g.response === 'Maybe').length
     const pending  = guests.filter(g => !g.response).length
     const dietary  = guests.filter(g => g.dietary).length
-    return { total, paulCt, jordanCt, yes, no, maybe, pending, dietary }
+    return { total, paulCt, jordanCt, yes, yesGuests, no, maybe, pending, dietary }
   }, [guests])
 
   if (loading) return (
@@ -231,7 +234,7 @@ export default function Guests() {
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:'1.5rem' }} className="guest-stats">
         {[
           { label:'Total guests',    val: stats.total,   note: `${stats.paulCt} Paul · ${stats.jordanCt} Jordan`, color:'var(--text)'   },
-          { label:'Confirmed yes',   val: stats.yes,     note: `${stats.no} no · ${stats.maybe} maybe`,           color:'var(--green)'  },
+          { label:'Confirmed attending', val: stats.yes, note: `${stats.yesGuests} guests confirmed yes`, color:'var(--green)'  },
           { label:'Awaiting RSVP',   val: stats.pending, note: `${stats.total - stats.pending} responded`,         color:'var(--amber)'  },
           { label:'Dietary needs',   val: stats.dietary, note: 'guests with restrictions',                          color:'var(--paul)'   },
         ].map(s => (
@@ -271,7 +274,7 @@ export default function Guests() {
         <table style={{ width:'100%', borderCollapse:'collapse', fontFamily:'var(--font-sans)', fontSize:13, minWidth:800 }}>
           <thead>
             <tr>
-              {['Name','Invited by','Relationship','Age','Save date','Invite','RSVP','Attending','Dietary','Table',''].map((h,i) => (
+              {['Name','Household','Invited by','Relationship','Age','Save date','Invite','RSVP','Attending','Dietary','Table',''].map((h,i) => (
                 <th key={i} style={{ padding:'10px 14px', textAlign:'left', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'0.07em', color:'var(--text3)', background:'var(--surface2)', borderBottom:'1px solid var(--border)', whiteSpace:'nowrap' }}>{h}</th>
               ))}
             </tr>
@@ -293,7 +296,11 @@ export default function Guests() {
                 >
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', fontWeight:500, whiteSpace:'nowrap' }}>
                     {g.first_name} {g.last_name || ''}
-                    {g.notes && <span style={{ marginLeft:6, fontSize:10, color:'var(--text3)', cursor:'help' }} title={g.notes}>📝</span>}
+                    {g.plus_ones && <span style={{ marginLeft:6, fontSize:10, color:'var(--text3)', cursor:'help' }} title={`Plus-ones: ${g.plus_ones}`}>👥</span>}
+                    {g.notes && <span style={{ marginLeft:4, fontSize:10, color:'var(--text3)', cursor:'help' }} title={g.notes}>📝</span>}
+                  </td>
+                  <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', color:'var(--text2)', fontSize:12, whiteSpace:'nowrap' }}>
+                    {g.household || '—'}
                   </td>
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)' }}>
                     <span className={`chip ${inv}`}>{g.invited_by}</span>
