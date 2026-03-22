@@ -12,7 +12,7 @@ const EMPTY_FORM = {
   save_the_date: '', invitation: '', response: '',
   attending: '', children: '',
   rehearsal_invited: '', rehearsal_going: '',
-  household: '', plus_ones: '', invite_list: 'A', dietary: '', table_num: '', gift_desc: '', thankyou_sent: '', notes: '',
+  household: '', plus_ones: '', invite_list: 'A', couple_id: '', dietary: '', table_num: '', gift_desc: '', thankyou_sent: '', notes: '',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ function GuestModal({ guest, onClose, onSave, saving }) {
     const clean = {}
     Object.entries(form).forEach(([k, v]) => {
       if (k === 'id') { clean[k] = v; return }
-      const num = ['attending','children','rehearsal_invited','table_num']
+      const num = ['attending','children','rehearsal_invited','table_num','couple_id']
       if (num.includes(k)) clean[k] = v === '' || v === null ? null : parseInt(v)
       else clean[k] = v === '' ? null : v
     })
@@ -72,6 +72,7 @@ function GuestModal({ guest, onClose, onSave, saving }) {
           {field('Email', 'email', 'email')}
           {field('Address', 'address')}
           {field('Household', 'household')}
+          {field('Couple # (pairs rows visually)', 'couple_id', 'number')}
           {field('Invited by', 'invited_by', 'text', ['Paul', 'Jordan'])}
           {field('Age group', 'age', 'text', AGE_GROUPS)}
           {field('Relationship', 'relationship', 'text', RELATIONSHIPS)}
@@ -229,11 +230,29 @@ export default function Guests() {
     g = [...g].sort((a, b) => {
       const av = (a[sortKey] ?? '').toString().toLowerCase()
       const bv = (b[sortKey] ?? '').toString().toLowerCase()
-      if (av < bv) return sortDir === 'asc' ? -1 : 1
-      if (av > bv) return sortDir === 'asc' ? 1 : -1
+      let cmp = 0
+      if (av < bv) cmp = sortDir === 'asc' ? -1 : 1
+      else if (av > bv) cmp = sortDir === 'asc' ? 1 : -1
+      // Keep couples together — if same couple_id, sort by first_name within pair
+      if (cmp !== 0 && a.couple_id && b.couple_id && a.couple_id === b.couple_id) return (a.first_name||'').localeCompare(b.first_name||'')
+      if (cmp !== 0) return cmp
+      // Same primary sort value — keep couples adjacent
+      if (a.couple_id && b.couple_id && a.couple_id === b.couple_id) return (a.first_name||'').localeCompare(b.first_name||'')
       return 0
     })
-    return g
+    // Second pass: pull couple partners next to their pair
+    const paired = []
+    const seen = new Set()
+    for (const guest of g) {
+      if (seen.has(guest.id)) continue
+      seen.add(guest.id)
+      paired.push(guest)
+      if (guest.couple_id) {
+        const partner = g.find(x => x.couple_id === guest.couple_id && x.id !== guest.id && !seen.has(x.id))
+        if (partner) { seen.add(partner.id); paired.push(partner) }
+      }
+    }
+    return paired
   }, [guests, filters, search, sortKey, sortDir])
 
   const stats = useMemo(() => {
@@ -378,12 +397,15 @@ export default function Guests() {
               const rc  = relColor(g.relationship)
               const rsc = rsvpColor(g.response)
               const inv = g.invited_by === 'Paul' ? 'paul' : 'jordan'
+              const coupleColors = ['#e8f2fc','#faeaf2','#e4f5ee','#fef3e0','#f0ede8','#e8eaf6','#fce4ec','#e0f7fa']
+              const coupleColor = g.couple_id ? coupleColors[(g.couple_id - 1) % coupleColors.length] : null
               return (
                 <tr key={g.id}
                   onMouseEnter={e => e.currentTarget.querySelectorAll('td').forEach(td => td.style.background='var(--surface2)')}
-                  onMouseLeave={e => e.currentTarget.querySelectorAll('td').forEach(td => td.style.background='')}
+                  onMouseLeave={e => e.currentTarget.querySelectorAll('td').forEach(td => td.style.background = coupleColor ? coupleColor : '')}
+                  style={{ borderLeft: coupleColor ? `3px solid ${coupleColor === '#e8f2fc' ? 'var(--paul)' : coupleColor === '#faeaf2' ? 'var(--jordan)' : coupleColor === '#e4f5ee' ? 'var(--green)' : coupleColor === '#fef3e0' ? 'var(--amber)' : '#9e9e9e'}` : '3px solid transparent' }}
                 >
-                  <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', textAlign:'center' }}>
+                  <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', textAlign:'center', background: coupleColor || '' }}>
                     <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:22, height:22, borderRadius:'50%', fontSize:11, fontWeight:600, background: g.invite_list === 'B' ? 'var(--amber-light)' : 'var(--green-light)', color: g.invite_list === 'B' ? 'var(--amber-text)' : 'var(--green-text)' }}>
                       {g.invite_list || 'A'}
                     </span>
