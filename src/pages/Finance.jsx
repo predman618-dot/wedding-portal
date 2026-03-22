@@ -1,16 +1,5 @@
-import { useState, useMemo } from 'react'
-
-// ── Seed data (matches original file exactly) ──────────────────────────────
-const SEED_TRANSACTIONS = [
-  { id: 1, date: '2026-02-12', desc: 'Shared Account Transfer',   cat: 'Fund Transfer',    cost: 100,   paid: 'Jordan', split: 'jordan', reimb: 'na'      },
-  { id: 2, date: '2026-02-12', desc: 'Shared Account Transfer',   cat: 'Fund Transfer',    cost: 100,   paid: 'Paul',   split: 'paul',   reimb: 'na'      },
-  { id: 3, date: '2026-02-16', desc: 'Venue Deposit',             cat: 'Venue',            cost: 10250, paid: 'Paul',   split: 'shared', reimb: 'pending' },
-  { id: 4, date: '2026-02-19', desc: 'Wedding Planner Retainer',  cat: 'Planning',         cost: 1500,  paid: 'Paul',   split: 'shared', reimb: 'pending' },
-  { id: 5, date: '2026-02-26', desc: 'Shared Account Transfer',   cat: 'Fund Transfer',    cost: 1000,  paid: 'Paul',   split: 'paul',   reimb: 'na'      },
-  { id: 6, date: '2026-03-01', desc: 'Shared Account Transfer',   cat: 'Fund Transfer',    cost: 1150,  paid: 'Jordan', split: 'jordan', reimb: 'na'      },
-  { id: 7, date: '2026-03-19', desc: 'Photo/Video/DJ Retainer',   cat: 'Photo/Video/DJ',   cost: 1500,  paid: 'Paul',   split: 'shared', reimb: 'pending' },
-  { id: 8, date: '2026-03-15', desc: 'Rehearsal Venue Deposit',   cat: 'Rehearsal Dinner', cost: 1000,  paid: 'Paul',   split: 'shared', reimb: 'pending' },
-]
+import { useState, useMemo, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 
 const CATEGORIES = [
   'Venue','Planning','Photo/Video/DJ','Catering','Flowers',
@@ -27,22 +16,22 @@ function calc(txns) {
   txns.forEach(t => {
     const half = t.cost / 2
     if (t.split === 'paul') {
-      if (t.paid==='Paul')   { pOOP+=t.cost; t.cat==='Fund Transfer' ? pTransfers+=t.cost : (pVendors+=t.cost) }
+      if (t.paid==='Paul')        { pOOP+=t.cost; t.cat==='Fund Transfer' ? pTransfers+=t.cost : (pVendors+=t.cost) }
       else if (t.paid==='Jordan') { jOOP+=t.cost; t.cat==='Fund Transfer' ? jTransfers+=t.cost : (jVendors+=t.cost) }
     } else if (t.split === 'jordan') {
-      if (t.paid==='Jordan') { jOOP+=t.cost; t.cat==='Fund Transfer' ? jTransfers+=t.cost : (jVendors+=t.cost) }
-      else if (t.paid==='Paul') { pOOP+=t.cost; t.cat==='Fund Transfer' ? pTransfers+=t.cost : (pVendors+=t.cost) }
+      if (t.paid==='Jordan')      { jOOP+=t.cost; t.cat==='Fund Transfer' ? jTransfers+=t.cost : (jVendors+=t.cost) }
+      else if (t.paid==='Paul')   { pOOP+=t.cost; t.cat==='Fund Transfer' ? pTransfers+=t.cost : (pVendors+=t.cost) }
     } else {
       if (t.paid==='Paul') {
         pVendors+=t.cost
-        if (t.reimb==='paid')    { pOOP+=half; jOOP+=half; jReimbPaid+=half }
+        if (t.reimb==='paid')         { pOOP+=half; jOOP+=half; jReimbPaid+=half }
         else if (t.reimb==='pending') { pOOP+=t.cost; jReimbPending+=half }
-        else { pOOP+=half; jOOP+=half }
+        else                          { pOOP+=half; jOOP+=half }
       } else if (t.paid==='Jordan') {
         jVendors+=t.cost
-        if (t.reimb==='paid')    { jOOP+=half; pOOP+=half; pReimbPaid+=half }
+        if (t.reimb==='paid')         { jOOP+=half; pOOP+=half; pReimbPaid+=half }
         else if (t.reimb==='pending') { jOOP+=t.cost; pReimbPending+=half }
-        else { jOOP+=half; pOOP+=half }
+        else                          { jOOP+=half; pOOP+=half }
       } else {
         pOOP+=half; jOOP+=half
       }
@@ -57,7 +46,7 @@ function fmtDate(iso) {
 }
 
 // ── Add Transaction Modal ─────────────────────────────────────────────────
-function AddModal({ onClose, onSave }) {
+function AddModal({ onClose, onSave, saving }) {
   const today = new Date().toISOString().slice(0, 10)
   const [form, setForm] = useState({
     date: today, desc: '', cat: 'Venue', cost: '',
@@ -66,34 +55,25 @@ function AddModal({ onClose, onSave }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const showReimb = form.split === 'shared' && form.paid !== 'Shared'
-  const other = form.paid === 'Paul' ? 'Jordan' : 'Paul'
-  const halfAmt = fmt((parseFloat(form.cost) || 0) / 2)
+  const other     = form.paid === 'Paul' ? 'Jordan' : 'Paul'
+  const halfAmt   = fmt((parseFloat(form.cost) || 0) / 2)
 
   function handleSave() {
     if (!form.date || !form.desc || !form.cost) return
-    onSave({
-      ...form,
-      cost: parseFloat(form.cost),
-      reimb: showReimb ? form.reimb : 'na',
-    })
+    onSave({ ...form, cost: parseFloat(form.cost), reimb: showReimb ? form.reimb : 'na' })
   }
 
   return (
-    <div
-      className="overlay open"
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
+    <div className="overlay open" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="modal">
         <div className="modal-title">Add transaction</div>
-
         <div className="field">
           <label>Date</label>
           <input type="date" value={form.date} onChange={e => set('date', e.target.value)} />
         </div>
         <div className="field">
           <label>Description</label>
-          <input type="text" value={form.desc} placeholder="e.g. Florist deposit"
-            onChange={e => set('desc', e.target.value)} />
+          <input type="text" value={form.desc} placeholder="e.g. Florist deposit" onChange={e => set('desc', e.target.value)} />
         </div>
         <div className="field">
           <label>Category</label>
@@ -103,8 +83,7 @@ function AddModal({ onClose, onSave }) {
         </div>
         <div className="field">
           <label>Amount ($)</label>
-          <input type="number" value={form.cost} min="0" step="0.01" placeholder="0.00"
-            onChange={e => set('cost', e.target.value)} />
+          <input type="number" value={form.cost} min="0" step="0.01" placeholder="0.00" onChange={e => set('cost', e.target.value)} />
         </div>
         <div className="field">
           <label>Paid by</label>
@@ -129,15 +108,14 @@ function AddModal({ onClose, onSave }) {
               <option value="pending">No — reimbursement pending</option>
               <option value="paid">Yes — already reimbursed</option>
             </select>
-            <div className="field-hint">
-              Has {other} already sent {form.paid} their half ({halfAmt})?
-            </div>
+            <div className="field-hint">Has {other} already sent {form.paid} their half ({halfAmt})?</div>
           </div>
         )}
-
         <div className="modal-actions">
-          <button className="btn btn-cancel" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSave}>Add</button>
+          <button className="btn btn-cancel" onClick={onClose} disabled={saving}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving…' : 'Add'}
+          </button>
         </div>
       </div>
     </div>
@@ -146,46 +124,114 @@ function AddModal({ onClose, onSave }) {
 
 // ── Main Finance Page ─────────────────────────────────────────────────────
 export default function Finance() {
-  const [txns, setTxns]       = useState(SEED_TRANSACTIONS)
-  const [nextId, setNextId]   = useState(9)
-  const [budget, setBudget]   = useState(50000)
-  const [showModal, setModal] = useState(false)
+  const [txns,      setTxns]    = useState([])
+  const [budget,    setBudget]  = useState(50000)
+  const [showModal, setModal]   = useState(false)
+  const [loading,   setLoading] = useState(true)
+  const [saving,    setSaving]  = useState(false)
+  const [error,     setError]   = useState(null)
 
-  const vendorSpend = useMemo(
-    () => txns.filter(t => t.cat !== 'Fund Transfer').reduce((s,t) => s+t.cost, 0),
-    [txns]
-  )
-  const remaining = budget - vendorSpend
-  const pct       = Math.min(100, Math.round(vendorSpend / budget * 100))
-  const barClass  = pct > 90 ? 'danger' : pct > 70 ? 'warn' : ''
+  // ── Load data on mount ──────────────────────────────────────────────────
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      setError(null)
 
-  const s      = useMemo(() => calc(txns), [txns])
-  const grand  = s.pOOP + s.jOOP
-  const pp     = grand > 0 ? Math.round(s.pOOP / grand * 100) : 50
-  const sorted = useMemo(() => [...txns].sort((a,b) => new Date(b.date) - new Date(a.date)), [txns])
+      const { data: txnData, error: txnErr } = await supabase
+        .from('transactions')
+        .select('*')
+        .order('date', { ascending: false })
 
-  function toggleReimb(id) {
-    setTxns(prev => prev.map(t =>
-      t.id === id && t.reimb !== 'na'
-        ? { ...t, reimb: t.reimb === 'pending' ? 'paid' : 'pending' }
-        : t
-    ))
+      if (txnErr) { setError('Could not load transactions.'); setLoading(false); return }
+
+      const { data: settingData } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'budget')
+        .single()
+
+      setTxns(txnData || [])
+      if (settingData) setBudget(parseFloat(settingData.value) || 50000)
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  // ── Realtime — see each other's changes live ────────────────────────────
+  useEffect(() => {
+    const channel = supabase
+      .channel('transactions-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, payload => {
+        if (payload.eventType === 'INSERT') {
+          setTxns(prev => [payload.new, ...prev])
+        } else if (payload.eventType === 'UPDATE') {
+          setTxns(prev => prev.map(t => t.id === payload.new.id ? payload.new : t))
+        } else if (payload.eventType === 'DELETE') {
+          setTxns(prev => prev.filter(t => t.id !== payload.old.id))
+        }
+      })
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [])
+
+  // ── Save budget ─────────────────────────────────────────────────────────
+  async function handleBudgetChange(val) {
+    const num = parseFloat(val) || 0
+    setBudget(num)
+    await supabase.from('settings').upsert({ key: 'budget', value: String(num) })
   }
 
-  function delTxn(id) {
-    setTxns(prev => prev.filter(t => t.id !== id))
-  }
-
-  function addTxn(data) {
-    setTxns(prev => [...prev, { ...data, id: nextId }])
-    setNextId(n => n + 1)
+  // ── Add transaction ─────────────────────────────────────────────────────
+  async function addTxn(data) {
+    setSaving(true)
+    const { error } = await supabase.from('transactions').insert([{
+      date:   data.date,
+      "desc": data.desc,
+      cat:    data.cat,
+      cost:   data.cost,
+      paid:   data.paid,
+      split:  data.split,
+      reimb:  data.reimb,
+    }])
+    if (error) setError('Could not save transaction.')
+    setSaving(false)
     setModal(false)
   }
 
+  // ── Toggle reimbursement ────────────────────────────────────────────────
+  async function toggleReimb(id, current) {
+    if (current === 'na') return
+    const next = current === 'pending' ? 'paid' : 'pending'
+    const { error } = await supabase.from('transactions').update({ reimb: next }).eq('id', id)
+    if (error) setError('Could not update reimbursement.')
+  }
+
+  // ── Delete transaction ──────────────────────────────────────────────────
+  async function delTxn(id) {
+    const { error } = await supabase.from('transactions').delete().eq('id', id)
+    if (error) setError('Could not delete transaction.')
+  }
+
+  // ── Derived values ──────────────────────────────────────────────────────
+  const vendorSpend  = useMemo(() => txns.filter(t => t.cat !== 'Fund Transfer').reduce((s,t) => s + Number(t.cost), 0), [txns])
+  const remaining    = budget - vendorSpend
+  const pct          = Math.min(100, Math.round(vendorSpend / budget * 100))
+  const s            = useMemo(() => calc(txns), [txns])
+  const grand        = s.pOOP + s.jOOP
+  const pp           = grand > 0 ? Math.round(s.pOOP / grand * 100) : 50
+  const sorted       = useMemo(() => [...txns].sort((a,b) => new Date(b.date) - new Date(a.date)), [txns])
   const totalPending = s.pReimbPending + s.jReimbPending
   const alertParts   = []
   if (s.jReimbPending > 0) alertParts.push(`Jordan owes Paul ${fmt(s.jReimbPending)}`)
   if (s.pReimbPending > 0) alertParts.push(`Paul owes Jordan ${fmt(s.pReimbPending)}`)
+
+  if (loading) {
+    return (
+      <div className="page-content" style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:300 }}>
+        <div style={{ fontFamily:'var(--font-sans)', fontSize:14, color:'var(--text3)' }}>Loading finances…</div>
+      </div>
+    )
+  }
 
   return (
     <div className="page-content">
@@ -196,17 +242,19 @@ export default function Finance() {
           <p className="page-subtitle">Real out-of-pocket spend tracker</p>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <label style={{ fontFamily:'var(--font-sans)', fontSize:12, color:'var(--text2)', textTransform:'uppercase', letterSpacing:'0.06em' }}>
-            Total budget
-          </label>
-          <input
-            type="number"
-            value={budget}
-            onChange={e => setBudget(parseFloat(e.target.value)||0)}
-            style={{ width:110, padding:'6px 10px', border:'1px solid var(--border2)', borderRadius:'var(--radius-sm)', background:'var(--surface)', color:'var(--text)', fontSize:14, fontFamily:'var(--font-sans)' }}
-          />
+          <label style={{ fontFamily:'var(--font-sans)', fontSize:12, color:'var(--text2)', textTransform:'uppercase', letterSpacing:'0.06em' }}>Total budget</label>
+          <input type="number" value={budget} onChange={e => handleBudgetChange(e.target.value)}
+            style={{ width:110, padding:'6px 10px', border:'1px solid var(--border2)', borderRadius:'var(--radius-sm)', background:'var(--surface)', color:'var(--text)', fontSize:14, fontFamily:'var(--font-sans)' }} />
         </div>
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:'var(--radius)', padding:'12px 16px', marginBottom:'1.5rem', fontFamily:'var(--font-sans)', fontSize:13, color:'#dc2626', display:'flex', justifyContent:'space-between' }}>
+          {error}
+          <button onClick={() => setError(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'#dc2626', fontSize:16 }}>×</button>
+        </div>
+      )}
 
       {/* Budget bar */}
       <div style={{ marginBottom:'1.75rem' }}>
@@ -215,21 +263,13 @@ export default function Finance() {
           <span>{fmt(remaining)} remaining</span>
         </div>
         <div style={{ height:8, background:'var(--surface2)', borderRadius:99, overflow:'hidden' }}>
-          <div style={{
-            height:'100%', borderRadius:99, width:`${pct}%`, transition:'width 0.4s ease',
-            background: pct>90 ? 'var(--red)' : pct>70 ? 'var(--amber)' : 'var(--green)',
-          }} />
+          <div style={{ height:'100%', borderRadius:99, width:`${pct}%`, transition:'width 0.4s ease', background: pct>90 ? 'var(--red)' : pct>70 ? 'var(--amber)' : 'var(--green)' }} />
         </div>
       </div>
 
       {/* Alert banner */}
       {totalPending > 0 && (
-        <div style={{
-          display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap',
-          background:'var(--amber-light)', border:'1px solid rgba(196,122,16,0.25)',
-          borderRadius:'var(--radius)', padding:'12px 16px', marginBottom:'1.75rem',
-          fontFamily:'var(--font-sans)', fontSize:13, color:'var(--amber-text)',
-        }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap', background:'var(--amber-light)', border:'1px solid rgba(196,122,16,0.25)', borderRadius:'var(--radius)', padding:'12px 16px', marginBottom:'1.75rem', fontFamily:'var(--font-sans)', fontSize:13, color:'var(--amber-text)' }}>
           <span>{alertParts.join('  ·  ')}</span>
           <span style={{ opacity:0.6, fontSize:11 }}>Click a status badge to mark as reimbursed</span>
         </div>
@@ -238,14 +278,14 @@ export default function Finance() {
       {/* Metric cards */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:'1.75rem' }} className="fin-metrics">
         {[
-          { label:'Total vendor spend',       val: fmt(vendorSpend),           cls:'green',  note: null },
-          { label:'Paul out of pocket',        val: fmt(s.pOOP),                cls:'paul',   note:`${pp}% of combined spend` },
-          { label:'Jordan out of pocket',      val: fmt(s.jOOP),                cls:'jordan', note:`${100-pp}% of combined spend` },
-          { label:'Pending reimbursements',    val: fmt(s.pReimbPending+s.jReimbPending), cls:'amber', note: null },
+          { label:'Total vendor spend',    val: fmt(vendorSpend), cls:'green'  },
+          { label:'Paul out of pocket',     val: fmt(s.pOOP),   note:`${pp}% of combined`,       cls:'paul'   },
+          { label:'Jordan out of pocket',   val: fmt(s.jOOP),   note:`${100-pp}% of combined`,   cls:'jordan' },
+          { label:'Pending reimbursements', val: fmt(totalPending),                               cls:'amber'  },
         ].map(m => (
           <div key={m.label} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--radius)', padding:16 }}>
             <div style={{ fontFamily:'var(--font-sans)', fontSize:11, textTransform:'uppercase', letterSpacing:'0.07em', color:'var(--text3)', marginBottom:8 }}>{m.label}</div>
-            <div style={{ fontSize:24, fontWeight:'normal', letterSpacing:'-0.5px', color:`var(--${m.cls})` }}>{m.val}</div>
+            <div style={{ fontSize:24, letterSpacing:'-0.5px', color:`var(--${m.cls})` }}>{m.val}</div>
             {m.note && <div style={{ fontFamily:'var(--font-sans)', fontSize:11, color:'var(--text3)', marginTop:4 }}>{m.note}</div>}
           </div>
         ))}
@@ -259,9 +299,7 @@ export default function Finance() {
         ].map(p => (
           <div key={p.key} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--radius)', padding:18 }}>
             <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
-              <div className={`avatar ${p.key}`} style={{ width:38,height:38,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'var(--font-sans)',fontWeight:500,fontSize:14 }}>
-                {p.initial}
-              </div>
+              <div className={`avatar ${p.key}`} style={{ width:38,height:38,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'var(--font-sans)',fontWeight:500,fontSize:14 }}>{p.initial}</div>
               <div style={{ fontSize:17 }}>{p.label}</div>
             </div>
             <div style={{ fontSize:26, letterSpacing:'-0.5px', color:`var(--${p.key})`, marginBottom:2 }}>{fmt(p.oop)}</div>
@@ -271,13 +309,12 @@ export default function Finance() {
             </div>
             <div style={{ borderTop:'1px solid var(--border)' }}>
               {[
-                ['Shared account transfers',    fmt(p.transfers),  false],
-                ['Personal vendor payments',     fmt(p.vendors),    false],
-                ['Reimbursements paid out',      fmt(p.reimbPaid),  false],
-                ['Reimbursements still owed',    p.reimbPending>0 ? fmt(p.reimbPending)+' owed' : '—', p.reimbPending>0],
+                ['Shared account transfers',  fmt(p.transfers), false],
+                ['Personal vendor payments',   fmt(p.vendors),   false],
+                ['Reimbursements paid out',    fmt(p.reimbPaid), false],
+                ['Reimbursements still owed',  p.reimbPending>0 ? fmt(p.reimbPending)+' owed' : '—', p.reimbPending>0],
               ].map(([label, val, isPending]) => (
-                <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 0', borderBottom:'1px solid var(--border)', fontFamily:'var(--font-sans)', fontSize:13 }}
-                  className="card-last-no-border">
+                <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 0', borderBottom:'1px solid var(--border)', fontFamily:'var(--font-sans)', fontSize:13 }}>
                   <span style={{ color:'var(--text2)' }}>{label}</span>
                   <span style={{ fontWeight:500, color: isPending ? 'var(--amber)' : 'var(--text)' }}>{val}</span>
                 </div>
@@ -297,21 +334,24 @@ export default function Finance() {
         <table style={{ width:'100%', borderCollapse:'collapse', fontFamily:'var(--font-sans)', fontSize:13, minWidth:620 }}>
           <thead>
             <tr>
-              {['Date','Description','Category','Amount','Paid by','Split','Reimbursement',''].map((h, i) => (
-                <th key={i} style={{ padding:'10px 14px', textAlign:'left', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'0.07em', color:'var(--text3)', background:'var(--surface2)', borderBottom:'1px solid var(--border)', whiteSpace:'nowrap' }}>
-                  {h}
-                </th>
+              {['Date','Description','Category','Amount','Paid by','Split','Reimbursement',''].map((h,i) => (
+                <th key={i} style={{ padding:'10px 14px', textAlign:'left', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'0.07em', color:'var(--text3)', background:'var(--surface2)', borderBottom:'1px solid var(--border)', whiteSpace:'nowrap' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
+            {sorted.length === 0 && (
+              <tr><td colSpan={8} style={{ padding:'32px', textAlign:'center', color:'var(--text3)', fontFamily:'var(--font-sans)', fontSize:13 }}>No transactions yet — add one to get started.</td></tr>
+            )}
             {sorted.map(t => {
               const pc = t.paid==='Paul'?'paul':t.paid==='Jordan'?'jordan':'shared'
               const sc = t.split==='paul'?'paul':t.split==='jordan'?'jordan':'shared'
               const sl = t.split==='paul'?'Paul':t.split==='jordan'?'Jordan':'Shared'
               return (
-                <tr key={t.id} onMouseEnter={e=>e.currentTarget.querySelectorAll('td').forEach(td=>td.style.background='var(--surface2)')}
-                  onMouseLeave={e=>e.currentTarget.querySelectorAll('td').forEach(td=>td.style.background='')}>
+                <tr key={t.id}
+                  onMouseEnter={e => e.currentTarget.querySelectorAll('td').forEach(td => td.style.background='var(--surface2)')}
+                  onMouseLeave={e => e.currentTarget.querySelectorAll('td').forEach(td => td.style.background='')}
+                >
                   <td style={{ padding:'11px 14px', borderBottom:'1px solid var(--border)', color:'var(--text3)', fontSize:12 }}>{fmtDate(t.date)}</td>
                   <td style={{ padding:'11px 14px', borderBottom:'1px solid var(--border)', fontWeight:500 }}>{t.desc}</td>
                   <td style={{ padding:'11px 14px', borderBottom:'1px solid var(--border)' }}><span className="chip neutral">{t.cat}</span></td>
@@ -321,15 +361,7 @@ export default function Finance() {
                   <td style={{ padding:'11px 14px', borderBottom:'1px solid var(--border)' }}>
                     {t.reimb === 'na'
                       ? <span className="chip neutral">—</span>
-                      : <button
-                          onClick={() => toggleReimb(t.id)}
-                          style={{
-                            background:'none', border:'none', borderRadius:99, cursor:'pointer',
-                            padding:'3px 10px', fontFamily:'var(--font-sans)', fontSize:11, fontWeight:500,
-                            background: t.reimb==='paid' ? 'var(--green-light)' : 'var(--amber-light)',
-                            color:      t.reimb==='paid' ? 'var(--green-text)'  : 'var(--amber-text)',
-                          }}
-                        >
+                      : <button onClick={() => toggleReimb(t.id, t.reimb)} style={{ background: t.reimb==='paid' ? 'var(--green-light)' : 'var(--amber-light)', color: t.reimb==='paid' ? 'var(--green-text)' : 'var(--amber-text)', border:'none', borderRadius:99, cursor:'pointer', padding:'3px 10px', fontFamily:'var(--font-sans)', fontSize:11, fontWeight:500 }}>
                           {t.reimb==='paid' ? 'Reimbursed ✓' : 'Pending'}
                         </button>
                     }
@@ -337,8 +369,8 @@ export default function Finance() {
                   <td style={{ padding:'11px 14px', borderBottom:'1px solid var(--border)' }}>
                     <button onClick={() => delTxn(t.id)}
                       style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)', fontSize:16, padding:'2px 5px', borderRadius:4, lineHeight:1 }}
-                      onMouseEnter={e=>e.currentTarget.style.color='var(--red)'}
-                      onMouseLeave={e=>e.currentTarget.style.color='var(--text3)'}
+                      onMouseEnter={e => e.currentTarget.style.color='var(--red)'}
+                      onMouseLeave={e => e.currentTarget.style.color='var(--text3)'}
                     >×</button>
                   </td>
                 </tr>
@@ -348,7 +380,7 @@ export default function Finance() {
         </table>
       </div>
 
-      {showModal && <AddModal onClose={() => setModal(false)} onSave={addTxn} />}
+      {showModal && <AddModal onClose={() => setModal(false)} onSave={addTxn} saving={saving} />}
 
       <style>{`
         .avatar.paul   { background: var(--paul-light);   color: var(--paul-text);   }
@@ -363,7 +395,7 @@ export default function Finance() {
         .field-hint { font-family:var(--font-sans); font-size:11px; color:var(--text3); margin-top:5px; }
         .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:20px; }
         @media (max-width:600px) { .fin-metrics { grid-template-columns:repeat(2,1fr) !important; } }
-        @media (max-width:500px) { .fin-cards   { grid-template-columns:1fr !important; } }
+        @media (max-width:500px) { .fin-cards { grid-template-columns:1fr !important; } }
       `}</style>
     </div>
   )
