@@ -12,7 +12,7 @@ const EMPTY_FORM = {
   save_the_date: '', invitation: '', response: '',
   attending: '', children: '',
   rehearsal_invited: '', rehearsal_going: '',
-  household: '', plus_ones: '', dietary: '', table_num: '', gift_desc: '', thankyou_sent: '', notes: '',
+  household: '', plus_ones: '', invite_list: 'A', dietary: '', table_num: '', gift_desc: '', thankyou_sent: '', notes: '',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -75,6 +75,7 @@ function GuestModal({ guest, onClose, onSave, saving }) {
           {field('Invited by', 'invited_by', 'text', ['Paul', 'Jordan'])}
           {field('Age group', 'age', 'text', AGE_GROUPS)}
           {field('Relationship', 'relationship', 'text', RELATIONSHIPS)}
+          {field('Invite list', 'invite_list', 'text', ['A', 'B'])}
           {field('Dietary restrictions', 'dietary')}
         </div>
 
@@ -203,6 +204,8 @@ export default function Guests() {
     let g = guests
     if (filter === 'paul')   g = g.filter(x => x.invited_by === 'Paul')
     if (filter === 'jordan') g = g.filter(x => x.invited_by === 'Jordan')
+    if (filter === 'a')      g = g.filter(x => x.invite_list !== 'B')
+    if (filter === 'b')      g = g.filter(x => x.invite_list === 'B')
     if (search) {
       const q = search.toLowerCase()
       g = g.filter(x => `${x.first_name} ${x.last_name}`.toLowerCase().includes(q) || (x.relationship||'').toLowerCase().includes(q))
@@ -221,13 +224,15 @@ export default function Guests() {
     const total    = guests.length
     const paulCt   = guests.filter(g => g.invited_by === 'Paul').length
     const jordanCt = guests.filter(g => g.invited_by === 'Jordan').length
+    const aList    = guests.filter(g => g.invite_list !== 'B').length
+    const bList    = guests.filter(g => g.invite_list === 'B').length
+    const invited  = guests.filter(g => g.save_the_date === 'Sent').length
     const yes      = guests.filter(g => g.response === 'Yes').reduce((sum, g) => sum + (g.attending || 0) + (g.children || 0), 0)
     const yesGuests = guests.filter(g => g.response === 'Yes').length
     const no       = guests.filter(g => g.response === 'No').length
     const maybe    = guests.filter(g => g.response === 'Maybe').length
     const pending  = guests.filter(g => !g.response).length
-    const dietary  = guests.filter(g => g.dietary).length
-    return { total, paulCt, jordanCt, yes, yesGuests, no, maybe, pending, dietary }
+    return { total, paulCt, jordanCt, aList, bList, invited, yes, yesGuests, no, maybe, pending }
   }, [guests])
 
   if (loading) return (
@@ -256,10 +261,10 @@ export default function Guests() {
       {/* Stats */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:'1.5rem' }} className="guest-stats">
         {[
-          { label:'Total guests',    val: stats.total,   note: `${stats.paulCt} Paul · ${stats.jordanCt} Jordan`, color:'var(--text)'   },
-          { label:'Confirmed attending', val: stats.yes, note: `${stats.yesGuests} guests confirmed yes`, color:'var(--green)'  },
-          { label:'Awaiting RSVP',   val: stats.pending, note: `${stats.total - stats.pending} responded`,         color:'var(--amber)'  },
-          { label:'Dietary needs',   val: stats.dietary, note: 'guests with restrictions',                          color:'var(--paul)'   },
+          { label:'Total guests',       val: stats.total,   note: `${stats.aList} A list · ${stats.bList} B list`,     color:'var(--text)'   },
+          { label:'Confirmed attending',val: stats.yes,     note: `${stats.yesGuests} guests confirmed yes`,            color:'var(--green)'  },
+          { label:'Invited',            val: stats.invited, note: 'save the date sent',                                 color:'var(--paul)'   },
+          { label:'Awaiting RSVP',      val: stats.pending, note: `${stats.total - stats.pending} responded`,           color:'var(--amber)'  },
         ].map(s => (
           <div key={s.label} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--radius)', padding:16 }}>
             <div style={{ fontFamily:'var(--font-sans)', fontSize:11, textTransform:'uppercase', letterSpacing:'0.07em', color:'var(--text3)', marginBottom:8 }}>{s.label}</div>
@@ -271,7 +276,7 @@ export default function Guests() {
 
       {/* Filters + search */}
       <div style={{ display:'flex', gap:8, marginBottom:'1rem', flexWrap:'wrap', alignItems:'center' }}>
-        {[['all','All guests'],['paul',"Paul's side"],['jordan',"Jordan's side"]].map(([val, label]) => (
+        {[['all','All guests'],['paul',"Paul's side"],['jordan',"Jordan's side"],['a','A List'],['b','B List']].map(([val, label]) => (
           <button key={val} onClick={() => setFilter(val)}
             style={{
               fontFamily:'var(--font-sans)', fontSize:12, padding:'5px 14px',
@@ -299,6 +304,7 @@ export default function Guests() {
             <tr>
               {[
                 { label:'Name',       key:'last_name'    },
+                { label:'List',       key:'invite_list'  },
                 { label:'Household',  key:'household'    },
                 { label:'Invited by', key:'invited_by'   },
                 { label:'Relationship',key:'relationship'},
@@ -320,7 +326,7 @@ export default function Guests() {
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={11} style={{ padding:'32px', textAlign:'center', color:'var(--text3)', fontSize:13 }}>
+              <tr><td colSpan={12} style={{ padding:'32px', textAlign:'center', color:'var(--text3)', fontSize:13 }}>
                 {guests.length === 0 ? 'No guests yet — add one to get started.' : 'No guests match your filter.'}
               </td></tr>
             )}
@@ -337,6 +343,11 @@ export default function Guests() {
                     {g.first_name} {g.last_name || ''}
                     {g.plus_ones && <span style={{ marginLeft:6, fontSize:10, color:'var(--text3)', cursor:'help' }} title={`Plus-ones: ${g.plus_ones}`}>👥</span>}
                     {g.notes && <span style={{ marginLeft:4, fontSize:10, color:'var(--text3)', cursor:'help' }} title={g.notes}>📝</span>}
+                  </td>
+                  <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', textAlign:'center' }}>
+                    <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:22, height:22, borderRadius:'50%', fontSize:11, fontWeight:600, background: g.invite_list === 'B' ? 'var(--amber-light)' : 'var(--green-light)', color: g.invite_list === 'B' ? 'var(--amber-text)' : 'var(--green-text)' }}>
+                      {g.invite_list || 'A'}
+                    </span>
                   </td>
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', color:'var(--text2)', fontSize:12, whiteSpace:'nowrap' }}>
                     {g.household || '—'}
