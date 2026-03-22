@@ -86,7 +86,6 @@ function GuestModal({ guest, onClose, onSave, saving, allGuests }) {
                 ))
               }
             </select>
-            {form.couple_id && <div className="field-hint">Couple #{form.couple_id}</div>}
           </div>
           {field('Invited by', 'invited_by', 'text', ['Paul', 'Jordan'])}
           {field('Age group', 'age', 'text', AGE_GROUPS)}
