@@ -402,10 +402,10 @@ export default function Guests() {
               return (
                 <tr key={g.id}
                   onMouseEnter={e => e.currentTarget.querySelectorAll('td').forEach(td => td.style.background='var(--surface2)')}
-                  onMouseLeave={e => e.currentTarget.querySelectorAll('td').forEach(td => td.style.background = coupleColor ? coupleColor : '')}
+                  onMouseLeave={e => e.currentTarget.querySelectorAll('td').forEach(td => td.style.background = '')}
                   style={{ borderLeft: coupleColor ? `3px solid ${coupleColor === '#e8f2fc' ? 'var(--paul)' : coupleColor === '#faeaf2' ? 'var(--jordan)' : coupleColor === '#e4f5ee' ? 'var(--green)' : coupleColor === '#fef3e0' ? 'var(--amber)' : '#9e9e9e'}` : '3px solid transparent' }}
                 >
-                  <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', textAlign:'center', background: coupleColor || '' }}>
+                  <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', textAlign:'center' }}>
                     <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:22, height:22, borderRadius:'50%', fontSize:11, fontWeight:600, background: g.invite_list === 'B' ? 'var(--amber-light)' : 'var(--green-light)', color: g.invite_list === 'B' ? 'var(--amber-text)' : 'var(--green-text)' }}>
                       {g.invite_list || 'A'}
                     </span>
