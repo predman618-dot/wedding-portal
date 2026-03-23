@@ -295,7 +295,7 @@ export default function Guests() {
     const yesGuests = guests.filter(g => g.response === 'Yes').length
     const no       = guests.filter(g => g.response === 'No').length
     const maybe    = guests.filter(g => g.response === 'Maybe').length
-    const pending  = guests.filter(g => !g.response).length
+    const pending  = guests.filter(g => !g.response && g.invite_list !== 'B' && g.invite_list !== 'C').length
     return { total, paulCt, jordanCt, aList, bList, cList, invited, yes, yesGuests, no, maybe, pending }
   }, [guests])
 
@@ -328,7 +328,7 @@ export default function Guests() {
           { label:'Total guests',       val: stats.total,   note: `${stats.aList} A · ${stats.bList} B · ${stats.cList} C`,     color:'var(--text)'   },
           { label:'Confirmed attending',val: stats.yes,     note: `${stats.yesGuests} guests confirmed yes`,            color:'var(--green)'  },
           { label:'Invited',            val: stats.invited, note: 'save the date sent',                                 color:'var(--paul)'   },
-          { label:'Awaiting RSVP',      val: stats.pending, note: `${stats.total - stats.pending} responded`,           color:'var(--amber)'  },
+          { label:'Awaiting RSVP',      val: stats.pending, note: `A list only`,           color:'var(--amber)'  },
         ].map(s => (
           <div key={s.label} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--radius)', padding:16 }}>
             <div style={{ fontFamily:'var(--font-sans)', fontSize:11, textTransform:'uppercase', letterSpacing:'0.07em', color:'var(--text3)', marginBottom:8 }}>{s.label}</div>
