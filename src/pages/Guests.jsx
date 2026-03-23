@@ -468,7 +468,28 @@ export default function Guests() {
                     <span className={`chip ${inv}`}>{g.invited_by}</span>
                   </td>
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)' }}>
-                    {g.relationship && <span className="chip" style={{ background: rc.bg, color: rc.color }}>{g.relationship}</span>}
+                    {g._editingRel
+                      ? <input autoFocus type="text" defaultValue={g.relationship || ''}
+                          style={{ fontFamily:'var(--font-sans)', fontSize:12, border:'1px solid var(--border2)', borderRadius:4, padding:'2px 6px', width:120, background:'var(--surface)', color:'var(--text)' }}
+                          onBlur={e => { saveGuest({ ...g, relationship: e.target.value.toUpperCase() || null, _editingRel: undefined }); setGuests(p => p.map(x => x.id === g.id ? { ...x, _editingRel: false } : x)) }}
+                          onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setGuests(p => p.map(x => x.id === g.id ? { ...x, _editingRel: false } : x)) }}
+                        />
+                      : <select
+                          value={RELATIONSHIPS.includes(g.relationship) ? (g.relationship || '') : (g.relationship ? '__custom__' : '')}
+                          onChange={e => {
+                            if (e.target.value === '__custom__') {
+                              setGuests(p => p.map(x => x.id === g.id ? { ...x, _editingRel: true } : x))
+                            } else {
+                              saveGuest({ ...g, relationship: e.target.value || null })
+                            }
+                          }}
+                          style={{ fontFamily:'var(--font-sans)', fontSize:12, background:'transparent', border:'none', color: rc.color, cursor:'pointer', outline:'none', fontWeight: g.relationship ? 500 : 400 }}>
+                          <option value="">—</option>
+                          {RELATIONSHIPS.map(r => <option key={r} value={r}>{r}</option>)}
+                          {g.relationship && !RELATIONSHIPS.includes(g.relationship) && <option value="__custom__">{g.relationship}</option>}
+                          <option value="__custom__">+ Custom label…</option>
+                        </select>
+                    }
                   </td>
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', color:'var(--text2)', fontSize:12 }}>{g.age || '—'}</td>
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)' }}>
