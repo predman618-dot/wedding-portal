@@ -90,7 +90,7 @@ function GuestModal({ guest, onClose, onSave, saving, allGuests }) {
           {field('Invited by', 'invited_by', 'text', ['Paul', 'Jordan'])}
           {field('Age group', 'age', 'text', AGE_GROUPS)}
           {field('Relationship', 'relationship', 'text', RELATIONSHIPS)}
-          {field('Invite list', 'invite_list', 'text', ['A', 'B'])}
+          {field('Invite list', 'invite_list', 'text', ['A', 'B', 'C'])}
           {field('Dietary restrictions', 'dietary')}
         </div>
 
@@ -273,15 +273,16 @@ export default function Guests() {
     const total    = guests.length
     const paulCt   = guests.filter(g => g.invited_by === 'Paul').length
     const jordanCt = guests.filter(g => g.invited_by === 'Jordan').length
-    const aList    = guests.filter(g => g.invite_list !== 'B').length
+    const aList    = guests.filter(g => g.invite_list !== 'B' && g.invite_list !== 'C').length
     const bList    = guests.filter(g => g.invite_list === 'B').length
+    const cList    = guests.filter(g => g.invite_list === 'C').length
     const invited  = guests.filter(g => g.save_the_date === 'Sent').length
     const yes      = guests.filter(g => g.response === 'Yes').reduce((sum, g) => sum + (g.attending || 0) + (g.children || 0), 0)
     const yesGuests = guests.filter(g => g.response === 'Yes').length
     const no       = guests.filter(g => g.response === 'No').length
     const maybe    = guests.filter(g => g.response === 'Maybe').length
     const pending  = guests.filter(g => !g.response).length
-    return { total, paulCt, jordanCt, aList, bList, invited, yes, yesGuests, no, maybe, pending }
+    return { total, paulCt, jordanCt, aList, bList, cList, invited, yes, yesGuests, no, maybe, pending }
   }, [guests])
 
   if (loading) return (
@@ -310,7 +311,7 @@ export default function Guests() {
       {/* Stats */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:'1.5rem' }} className="guest-stats">
         {[
-          { label:'Total guests',       val: stats.total,   note: `${stats.aList} A list · ${stats.bList} B list`,     color:'var(--text)'   },
+          { label:'Total guests',       val: stats.total,   note: `${stats.aList} A · ${stats.bList} B · ${stats.cList} C`,     color:'var(--text)'   },
           { label:'Confirmed attending',val: stats.yes,     note: `${stats.yesGuests} guests confirmed yes`,            color:'var(--green)'  },
           { label:'Invited',            val: stats.invited, note: 'save the date sent',                                 color:'var(--paul)'   },
           { label:'Awaiting RSVP',      val: stats.pending, note: `${stats.total - stats.pending} responded`,           color:'var(--amber)'  },
@@ -330,6 +331,7 @@ export default function Guests() {
           { val:'jordan', label:"Jordan's side",count: guests.filter(g => g.invited_by === 'Jordan').length },
           { val:'a',      label:'A List',       count: guests.filter(g => g.invite_list !== 'B').length },
           { val:'b',      label:'B List',       count: guests.filter(g => g.invite_list === 'B').length },
+          { val:'c',      label:'C List',       count: guests.filter(g => g.invite_list === 'C').length },
         ].map(({ val, label, count }) => {
           const active = filters.has(val)
           return (
@@ -435,7 +437,7 @@ export default function Guests() {
                   style={{ borderLeft: g.couple_id ? `3px solid ${coupleAccents[(g.couple_id - 1) % coupleAccents.length]}` : '3px solid transparent' }}
                 >
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', textAlign:'center' }}>
-                    <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:22, height:22, borderRadius:'50%', fontSize:11, fontWeight:600, background: g.invite_list === 'B' ? 'var(--amber-light)' : 'var(--green-light)', color: g.invite_list === 'B' ? 'var(--amber-text)' : 'var(--green-text)' }}>
+                    <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:22, height:22, borderRadius:'50%', fontSize:11, fontWeight:600, background: g.invite_list === 'B' ? 'var(--amber-light)' : g.invite_list === 'C' ? 'var(--jordan-light)' : 'var(--green-light)', color: g.invite_list === 'B' ? 'var(--amber-text)' : g.invite_list === 'C' ? 'var(--jordan-text)' : 'var(--green-text)' }}>
                       {g.invite_list || 'A'}
                     </span>
                   </td>
