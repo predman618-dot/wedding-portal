@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
-const RELATIONSHIPS = ['WEDDING PARTY', 'PARENT', 'SIBLING', 'GRANDPARENTS', 'UNCLE/AUNT', 'COUSIN', 'EXTENDED FAMILY', 'FRIENDS']
+const RELATIONSHIPS = ['WEDDING PARTY', 'PARENT', 'SIBLING', 'NIECE/NEPHEW', 'GRANDPARENTS', 'UNCLE/AUNT', 'COUSIN', 'EXTENDED FAMILY', 'FRIENDS']
 const AGE_GROUPS    = ['ADULT', 'TEEN', 'CHILD']
 const RESPONSES     = ['Yes', 'No', 'Maybe']
 const SENT_OPTS     = ['Sent', 'Not yet']
@@ -236,7 +236,7 @@ export default function Guests() {
   }
 
   // ── Relationship sort order ─────────────────────────────────────────────
-  const REL_ORDER = ['WEDDING PARTY','PARENT','SIBLING','GRANDPARENTS','UNCLE/AUNT','COUSIN','EXTENDED FAMILY','FRIENDS']
+  const REL_ORDER = ['WEDDING PARTY','PARENT','SIBLING','NIECE/NEPHEW','GRANDPARENTS','UNCLE/AUNT','COUSIN','EXTENDED FAMILY','FRIENDS']
 
   // ── Derived ─────────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
