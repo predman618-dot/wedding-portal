@@ -231,9 +231,10 @@ export default function Guests() {
         const matchSide = !filters.has('paul') && !filters.has('jordan') ||
           (filters.has('paul')   && x.invited_by === 'Paul') ||
           (filters.has('jordan') && x.invited_by === 'Jordan')
-        const matchList = !filters.has('a') && !filters.has('b') ||
-          (filters.has('a') && x.invite_list !== 'B') ||
-          (filters.has('b') && x.invite_list === 'B')
+        const matchList = !filters.has('a') && !filters.has('b') && !filters.has('c') ||
+          (filters.has('a') && x.invite_list !== 'B' && x.invite_list !== 'C') ||
+          (filters.has('b') && x.invite_list === 'B') ||
+          (filters.has('c') && x.invite_list === 'C')
         return matchSide && matchList
       })
     }
@@ -329,7 +330,7 @@ export default function Guests() {
         {[
           { val:'paul',   label:"Paul's side", count: guests.filter(g => g.invited_by === 'Paul').length },
           { val:'jordan', label:"Jordan's side",count: guests.filter(g => g.invited_by === 'Jordan').length },
-          { val:'a',      label:'A List',       count: guests.filter(g => g.invite_list !== 'B').length },
+          { val:'a',      label:'A List',       count: guests.filter(g => g.invite_list !== 'B' && g.invite_list !== 'C').length },
           { val:'b',      label:'B List',       count: guests.filter(g => g.invite_list === 'B').length },
           { val:'c',      label:'C List',       count: guests.filter(g => g.invite_list === 'C').length },
         ].map(({ val, label, count }) => {
