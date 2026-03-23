@@ -17,11 +17,22 @@ const EMPTY_FORM = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function relColor(rel) {
-  if (rel === 'WEDDING PARTY') return { bg: 'var(--paul-light)',   color: 'var(--paul-text)'   }
-  if (rel === 'IMMEDIATE FAM') return { bg: 'var(--jordan-light)', color: 'var(--jordan-text)' }
-  if (rel === 'FAMILY MOM')    return { bg: 'var(--green-light)',  color: 'var(--green-text)'  }
-  if (rel === 'FAMILY DAD')    return { bg: 'var(--green-light)',  color: 'var(--green-text)'  }
-  return { bg: 'var(--surface2)', color: 'var(--text2)' }
+  if (rel === 'WEDDING PARTY')  return { bg: 'var(--paul-light)',    color: 'var(--paul-text)'    }
+  if (rel === 'PARENT')         return { bg: 'var(--jordan-light)',  color: 'var(--jordan-text)'  }
+  if (rel === 'SIBLING')        return { bg: '#fce4ec',              color: '#880e4f'             }
+  if (rel === 'NIECE/NEPHEW')   return { bg: '#f3e5f5',              color: '#6a1b9a'             }
+  if (rel === 'GRANDPARENTS')   return { bg: 'var(--amber-light)',   color: 'var(--amber-text)'   }
+  if (rel === 'UNCLE/AUNT')     return { bg: 'var(--green-light)',   color: 'var(--green-text)'   }
+  if (rel === 'COUSIN')         return { bg: '#e0f7fa',              color: '#006064'             }
+  if (rel === 'EXTENDED FAMILY')return { bg: '#f1f8e9',              color: '#33691e'             }
+  if (rel === 'FRIENDS')        return { bg: '#e8eaf6',              color: '#283593'             }
+  // Legacy labels
+  if (rel === 'IMMEDIATE FAM')  return { bg: 'var(--jordan-light)',  color: 'var(--jordan-text)'  }
+  if (rel === 'FAMILY MOM')     return { bg: 'var(--jordan-light)',  color: 'var(--jordan-text)'  }
+  if (rel === 'FAMILY DAD')     return { bg: 'var(--jordan-light)',  color: 'var(--jordan-text)'  }
+  if (rel === 'FRIEND')         return { bg: '#e8eaf6',              color: '#283593'             }
+  // Custom — grey
+  return { bg: 'var(--surface2)', color: 'var(--text3)' }
 }
 
 function rsvpColor(r) {
