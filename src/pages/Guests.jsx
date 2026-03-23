@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
-const RELATIONSHIPS = ['IMMEDIATE FAM', 'WEDDING PARTY', 'FAMILY MOM', 'FAMILY DAD', 'GRANDPARENT', 'UNCLE/AUNT', 'COUSIN', 'FRIEND']
+const RELATIONSHIPS = ['WEDDING PARTY', 'PARENT', 'SIBLING', 'GRANDPARENTS', 'UNCLE/AUNT', 'COUSIN', 'EXTENDED FAMILY', 'FRIENDS']
 const AGE_GROUPS    = ['ADULT', 'TEEN', 'CHILD']
 const RESPONSES     = ['Yes', 'No', 'Maybe']
 const SENT_OPTS     = ['Sent', 'Not yet']
@@ -235,6 +235,9 @@ export default function Guests() {
     if (error) { setError('Could not delete guest.'); setGuests(prev => [...prev, removed].sort((a,b) => (a.last_name||'').localeCompare(b.last_name||''))) }
   }
 
+  // ── Relationship sort order ─────────────────────────────────────────────
+  const REL_ORDER = ['WEDDING PARTY','PARENT','SIBLING','GRANDPARENTS','UNCLE/AUNT','COUSIN','EXTENDED FAMILY','FRIENDS']
+
   // ── Derived ─────────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     let g = guests
@@ -256,11 +259,24 @@ export default function Guests() {
       g = g.filter(x => `${x.first_name} ${x.last_name}`.toLowerCase().includes(q) || (x.relationship||'').toLowerCase().includes(q))
     }
     g = [...g].sort((a, b) => {
-      const av = (a[sortKey] ?? '').toString().toLowerCase()
-      const bv = (b[sortKey] ?? '').toString().toLowerCase()
-      let cmp = 0
-      if (av < bv) cmp = sortDir === 'asc' ? -1 : 1
-      else if (av > bv) cmp = sortDir === 'asc' ? 1 : -1
+      let av, bv, cmp = 0
+      if (sortKey === 'relationship') {
+        const ai = REL_ORDER.indexOf(a.relationship)
+        const bi = REL_ORDER.indexOf(b.relationship)
+        const aRank = ai === -1 ? 999 : ai
+        const bRank = bi === -1 ? 999 : bi
+        if (aRank !== bRank) cmp = sortDir === 'asc' ? aRank - bRank : bRank - aRank
+        else {
+          av = (a.relationship || '').toLowerCase()
+          bv = (b.relationship || '').toLowerCase()
+          cmp = sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
+        }
+      } else {
+        av = (a[sortKey] ?? '').toString().toLowerCase()
+        bv = (b[sortKey] ?? '').toString().toLowerCase()
+        if (av < bv) cmp = sortDir === 'asc' ? -1 : 1
+        else if (av > bv) cmp = sortDir === 'asc' ? 1 : -1
+      }
       // Keep couples together — if same couple_id, sort by first_name within pair
       if (cmp !== 0 && a.couple_id && b.couple_id && a.couple_id === b.couple_id) return (a.first_name||'').localeCompare(b.first_name||'')
       if (cmp !== 0) return cmp
