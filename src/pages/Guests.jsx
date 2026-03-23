@@ -115,7 +115,19 @@ function GuestModal({ guest, onClose, onSave, saving, allGuests }) {
           Rehearsal Dinner
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-          {field('# Invited', 'rehearsal_invited', 'number')}
+          <div className="field">
+            <label>Invited to rehearsal?</label>
+            <div style={{ display:'flex', alignItems:'center', gap:8, paddingTop:6 }}>
+              <input type="checkbox"
+                checked={!!(form.rehearsal_invited > 0)}
+                onChange={e => set('rehearsal_invited', e.target.checked ? 1 : 0)}
+                style={{ width:15, height:15, cursor:'pointer', accentColor:'var(--green)' }}
+              />
+              <span style={{ fontFamily:'var(--font-sans)', fontSize:13, color:'var(--text2)' }}>
+                {form.rehearsal_invited > 0 ? 'Yes — invited' : 'No'}
+              </span>
+            </div>
+          </div>
           {field('Going?', 'rehearsal_going', 'text', ['Yes', 'No'])}
         </div>
 
@@ -235,7 +247,8 @@ export default function Guests() {
           (filters.has('a') && x.invite_list !== 'B' && x.invite_list !== 'C') ||
           (filters.has('b') && x.invite_list === 'B') ||
           (filters.has('c') && x.invite_list === 'C')
-        return matchSide && matchList
+        const matchRehearsal = !filters.has('rehearsal') || (x.rehearsal_invited > 0)
+        return matchSide && matchList && matchRehearsal
       })
     }
     if (search) {
@@ -332,7 +345,8 @@ export default function Guests() {
           { val:'jordan', label:"Jordan's side",count: guests.filter(g => g.invited_by === 'Jordan').length },
           { val:'a',      label:'A List',       count: guests.filter(g => g.invite_list !== 'B' && g.invite_list !== 'C').length },
           { val:'b',      label:'B List',       count: guests.filter(g => g.invite_list === 'B').length },
-          { val:'c',      label:'C List',       count: guests.filter(g => g.invite_list === 'C').length },
+          { val:'c',        label:'C List',         count: guests.filter(g => g.invite_list === 'C').length },
+          { val:'rehearsal', label:'Rehearsal',      count: guests.filter(g => g.rehearsal_invited > 0).length },
         ].map(({ val, label, count }) => {
           const active = filters.has(val)
           return (
@@ -393,7 +407,7 @@ export default function Guests() {
                 { label:'Invite',     key:'invitation'   },
                 { label:'RSVP',       key:'response'     },
                 { label:'Attending',  key:'attending'    },
-                { label:'Dietary',    key:'dietary'      },
+                { label:'Rehearsal',  key:'rehearsal_invited' },
                 { label:'Table',      key:'table_num'    },
                 { label:'',           key:null           },
               ].map(({ label, key }) => (
@@ -485,8 +499,12 @@ export default function Guests() {
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', color:'var(--text2)', textAlign:'center' }}>
                     {g.attending ?? '—'}
                   </td>
-                  <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', color:'var(--text2)', fontSize:12, maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                    {g.dietary || '—'}
+                  <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', textAlign:'center' }}>
+                    <input type="checkbox"
+                      checked={!!(g.rehearsal_invited > 0)}
+                      onChange={e => saveGuest({ ...g, rehearsal_invited: e.target.checked ? 1 : 0 })}
+                      style={{ width:15, height:15, cursor:'pointer', accentColor:'var(--green)' }}
+                    />
                   </td>
                   <td style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', color:'var(--text2)', textAlign:'center' }}>
                     {g.table_num ?? '—'}
