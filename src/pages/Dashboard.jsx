@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-const WEDDING_DATE = new Date('2026-10-10T17:00:00')
+const WEDDING_DATE = new Date('2027-06-19T17:00:00')
 
 function daysUntil(date) {
   const now = new Date()
@@ -9,7 +9,7 @@ function daysUntil(date) {
 }
 
 const QUICK_STATS = [
-  { label: 'Days to go',       value: daysUntil(WEDDING_DATE), note: 'October 10, 2026',  color: 'var(--text)' },
+  { label: 'Days to go',       value: daysUntil(WEDDING_DATE), note: 'June 19, 2027',  color: 'var(--text)' },
   { label: 'Budget used',      value: '27%',                   note: '$13,450 of $50,000', color: 'var(--green)' },
   { label: 'Vendors booked',   value: '4',                     note: '3 still needed',     color: 'var(--paul)' },
   { label: 'Guests confirmed', value: '—',                     note: 'Not started yet',    color: 'var(--text3)' },
@@ -58,7 +58,7 @@ export default function Dashboard() {
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 400, color: 'var(--text2)', fontStyle: 'italic' }}>
-            October 10, 2026
+            June 19, 2027
           </div>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
             Your wedding day
