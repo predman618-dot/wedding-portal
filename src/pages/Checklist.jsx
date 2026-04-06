@@ -97,7 +97,7 @@ export default function Checklist() {
   function onDrop(e, col)     { e.preventDefault(); if (dragId.current) moveTask(dragId.current, col); setOverCol(null) }
 
   const byCol = col => tasks.filter(t => t.col === col)
-  const assignee = val => ASSIGNEES.find(a => a.value === val)
+  const getAssignee = val => ASSIGNEES.find(a => a.value === val)
 
   return (
     <div className="page-content">
@@ -147,7 +147,7 @@ export default function Checklist() {
                     <span className={`cl-tag cl-tag-${task.category}`}>{task.category}</span>
                     {task.due_date && <span className="cl-due">{task.due_date}</span>}
                     {task.assignee && (
-                      <div className={`cl-assignee ${assignee(task.assignee)?.cls || ''}`}>
+                      <div className={`cl-assignee ${getAssignee(task.assignee)?.cls || ''}`}>
                         {task.assignee}
                       </div>
                     )}
