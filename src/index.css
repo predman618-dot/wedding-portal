@@ -1,67 +1,87 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* Core palette — carries over from finance tracker */
-  --bg:        #f7f6f2;
-  --surface:   #ffffff;
-  --surface2:  #f0ede8;
-  --surface3:  #e8e4de;
-  --text:      #1a1916;
-  --text2:     #6b6860;
-  --text3:     #a09d98;
-  --border:    rgba(0,0,0,0.10);
-  --border2:   rgba(0,0,0,0.18);
+  /* ── Warm cream backgrounds — Southern charm base ── */
+  --bg:        #FAF6EC;
+  --surface:   #FFFDF5;
+  --surface2:  #F5EDD8;
+  --surface3:  #EDE3C5;
 
-  /* Person colors */
-  --paul:       #2e7fd4;
-  --paul-light: #e8f2fc;
-  --paul-text:  #1a5fa0;
-  --jordan:     #c04d7a;
-  --jordan-light: #faeaf2;
-  --jordan-text: #8c2f58;
+  /* Warm text — rich brown tones, never cold gray */
+  --text:      #2A2018;
+  --text2:     #6B5840;
+  --text3:     #A08B6A;
+  --border:    rgba(160, 128, 72, 0.18);
+  --border2:   rgba(160, 128, 72, 0.32);
 
-  /* Status colors */
-  --green:       #1e9e6e;
-  --green-light: #e4f5ee;
-  --green-text:  #0f6647;
-  --amber:       #c47a10;
-  --amber-light: #fef3e0;
-  --amber-text:  #7a4c08;
-  --red:         #d94040;
+  /* ── Butter yellow — Jordan's signature ── */
+  --butter:        #E8B84B;
+  --butter-light:  #FBF3D5;
+  --butter-dark:   #A07828;
+  --butter-text:   #5A3E08;
+
+  /* ── Spanish moss — earthy sage-green ── */
+  --moss:       #6E8560;
+  --moss-light: #E6EDE0;
+  --moss-dark:  #445239;
+  --moss-text:  #2E3D25;
+
+  /* Person colors — softened & warmer */
+  --paul:       #5B8DB8;
+  --paul-light: #E8F1F8;
+  --paul-text:  #2E5A80;
+  --jordan:     #C07890;
+  --jordan-light: #F8ECF2;
+  --jordan-text: #7A3A52;
+
+  /* Status colors — warmer, less clinical */
+  --green:       #5A886A;
+  --green-light: #E4EEE8;
+  --green-text:  #2E5A3C;
+  --amber:       #C48828;
+  --amber-light: #FBF0D8;
+  --amber-text:  #7A5010;
+  --red:         #C45050;
 
   /* Portal nav */
-  --nav-w: 220px;
+  --nav-w: 224px;
 
   /* Typography */
   --font-serif: 'Cormorant Garamond', 'Georgia', serif;
   --font-sans:  'DM Sans', 'Helvetica Neue', sans-serif;
 
-  /* Shape */
-  --radius:    10px;
-  --radius-sm: 6px;
-  --shadow:    0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+  /* Shape — softer, more organic */
+  --radius:    14px;
+  --radius-sm: 8px;
+  --shadow:    0 1px 4px rgba(140,110,60,0.10), 0 2px 6px rgba(140,110,60,0.06);
+  --shadow-md: 0 4px 18px rgba(140,110,60,0.14);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg:        #141412;
-    --surface:   #1e1d1a;
-    --surface2:  #272521;
-    --surface3:  #302e2a;
-    --text:      #f0ede8;
-    --text2:     #a09d98;
-    --text3:     #6b6860;
-    --border:    rgba(255,255,255,0.08);
-    --border2:   rgba(255,255,255,0.15);
-    --paul-light: #0e2840;
-    --paul-text:  #7ab8f0;
-    --jordan-light: #2e0f1e;
-    --jordan-text: #e890ba;
-    --green-light: #0a2318;
-    --green-text:  #5ec49a;
-    --amber-light: #251808;
-    --amber-text:  #f0b050;
+    --bg:        #1E1910;
+    --surface:   #28220F;
+    --surface2:  #322B18;
+    --surface3:  #3C3420;
+    --text:      #F0E8D0;
+    --text2:     #C0A870;
+    --text3:     #806848;
+    --border:    rgba(200,168,90,0.14);
+    --border2:   rgba(200,168,90,0.26);
+    --butter-light:  #3A2E10;
+    --butter-dark:   #F0C860;
+    --butter-text:   #F0C860;
+    --moss-light:    #1A2418;
+    --moss-dark:     #9ABE88;
+    --moss-text:     #9ABE88;
+    --paul-light:    #0E2030;
+    --paul-text:     #88B8E0;
+    --jordan-light:  #2E1420;
+    --jordan-text:   #E098B0;
+    --green-light:   #0E2018;
+    --green-text:    #80B890;
+    --amber-light:   #281C08;
+    --amber-text:    #E0B060;
   }
 }
 
@@ -103,18 +123,18 @@ body {
 
 .nav-brand-title {
   font-family: var(--font-serif);
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 400;
-  color: var(--text);
-  letter-spacing: 0.01em;
+  color: var(--butter-dark);
+  letter-spacing: 0.02em;
   line-height: 1.2;
 }
 
 .nav-brand-sub {
-  font-size: 11px;
-  color: var(--text3);
-  margin-top: 3px;
-  letter-spacing: 0.06em;
+  font-size: 10.5px;
+  color: var(--moss);
+  margin-top: 4px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   font-family: var(--font-sans);
 }
@@ -130,10 +150,11 @@ body {
 .nav-section-label {
   font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--text3);
+  letter-spacing: 0.10em;
+  color: var(--moss);
   padding: 8px 12px 4px;
   font-family: var(--font-sans);
+  opacity: 0.75;
 }
 
 .nav-link {
@@ -156,8 +177,8 @@ body {
 }
 
 .nav-link.active {
-  background: var(--surface2);
-  color: var(--text);
+  background: var(--butter-light);
+  color: var(--butter-text);
   font-weight: 500;
 }
 
@@ -170,6 +191,7 @@ body {
 
 .nav-link.active .nav-link-icon {
   opacity: 1;
+  color: var(--butter);
 }
 
 .nav-footer {
@@ -293,6 +315,6 @@ body {
 }
 .btn-ghost  { background: transparent; color: var(--text); }
 .btn-ghost:hover { background: var(--surface2); }
-.btn-primary { background: var(--paul); color: #fff; border-color: var(--paul); font-weight: 500; }
+.btn-primary { background: var(--moss); color: #fff; border-color: var(--moss-dark); font-weight: 500; }
 .btn-primary:hover { opacity: 0.88; }
 .btn-cancel { background: transparent; color: var(--text2); border: 1px solid var(--border2); }

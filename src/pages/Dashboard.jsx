@@ -30,14 +30,14 @@ export default function Dashboard() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Good to see you.</h1>
-          <p className="page-subtitle">Everything for the big day, in one place.</p>
+          <p className="page-subtitle" style={{ color: 'var(--moss)', opacity: 0.9 }}>Everything for the big day, in one place.</p>
         </div>
       </div>
 
       {/* Countdown hero */}
       <div style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
+        background: 'linear-gradient(135deg, var(--butter-light) 0%, var(--surface) 60%)',
+        border: '1px solid rgba(232,184,75,0.35)',
         borderRadius: 'var(--radius)',
         padding: '28px 28px 24px',
         marginBottom: '1.5rem',
@@ -48,19 +48,19 @@ export default function Dashboard() {
         gap: '1rem',
       }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-sans)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'var(--text3)', marginBottom: 10 }}>
+          <div style={{ fontFamily: 'var(--font-sans)', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.10em', color: 'var(--moss)', marginBottom: 10, opacity: 0.85 }}>
             Time remaining
           </div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 56, fontWeight: 300, letterSpacing: '-2px', lineHeight: 1, color: 'var(--text)' }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 60, fontWeight: 400, letterSpacing: '-2px', lineHeight: 1, color: 'var(--butter-dark)' }}>
             {days}
-            <span style={{ fontSize: 24, color: 'var(--text3)', marginLeft: 8, fontFamily: 'var(--font-sans)', fontWeight: 300, letterSpacing: 0 }}>days</span>
+            <span style={{ fontSize: 26, color: 'var(--text3)', marginLeft: 10, fontFamily: 'var(--font-sans)', fontWeight: 300, letterSpacing: 0 }}>days</span>
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 400, color: 'var(--text2)', fontStyle: 'italic' }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, fontWeight: 400, color: 'var(--butter-dark)', fontStyle: 'italic' }}>
             June 19, 2027
           </div>
-          <div style={{ fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
+          <div style={{ fontFamily: 'var(--font-sans)', fontSize: 11.5, color: 'var(--moss)', marginTop: 5, letterSpacing: '0.04em' }}>
             Your wedding day
           </div>
         </div>
@@ -97,8 +97,8 @@ export default function Dashboard() {
 
       {/* Page shortcuts */}
       <div style={{ marginBottom: '0.5rem' }}>
-        <div style={{ fontFamily: 'var(--font-sans)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'var(--text3)', marginBottom: 10 }}>
-          Pages
+        <div style={{ fontFamily: 'var(--font-sans)', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.10em', color: 'var(--moss)', marginBottom: 10, opacity: 0.8 }}>
+        Pages
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }} className="dash-shortcuts">
           {SHORTCUTS.map(s => (
