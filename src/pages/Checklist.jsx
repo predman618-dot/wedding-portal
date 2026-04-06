@@ -5,37 +5,59 @@ const COLS   = ['todo', 'inprogress', 'done']
 const LABELS = { todo: 'To Do', inprogress: 'In Progress', done: 'Done' }
 const CATS   = ['venue','catering','flowers','music','photo','attire','general']
 const ASSIGNEES = [
-  { value: 'P', label: 'Paul',   cls: 'cl-a-p' },
-  { value: 'J', label: 'Jordan', cls: 'cl-a-j' },
-  { value: 'B', label: 'Both',   cls: 'cl-a-b' },
+  { value: '',  label: 'Unassigned', cls: '' },
+  { value: 'P', label: 'Paul',       cls: 'cl-a-p' },
+  { value: 'J', label: 'Jordan',     cls: 'cl-a-j' },
+  { value: 'W', label: 'Planner',    cls: 'cl-a-w' },
 ]
 const PRIORITIES = ['high','medium','low']
+const BLANK_FORM = { title:'', category:'general', priority:'medium', assignee:'', due_date:'' }
 
 export default function Checklist() {
-  const [tasks,     setTasks]     = useState([])
-  const [loading,   setLoading]   = useState(true)
-  const [modal,     setModal]     = useState(false)
-  const [editTask,  setEditTask]  = useState(null)
-  const [saving,    setSaving]    = useState(false)
-  const [form,      setForm]      = useState({ title:'', category:'general', priority:'medium', assignee:'B', due_date:'' })
+  const [tasks,    setTasks]    = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [modal,    setModal]    = useState(false)
+  const [editTask, setEditTask] = useState(null)
+  const [saving,   setSaving]   = useState(false)
+  const [form,     setForm]     = useState(BLANK_FORM)
   const dragId  = useRef(null)
-  const [overCol, setOverCol] = useState(null)
+  const [overCol, setOverCol]   = useState(null)
 
   useEffect(() => { fetchTasks() }, [])
 
   async function fetchTasks() {
     setLoading(true)
-    const { data } = await supabase.from('checklist_tasks').select('*').order('position').order('created_at')
+    const { data } = await supabase
+      .from('checklist_tasks')
+      .select('*')
+      .order('position')
+      .order('created_at')
     if (data) setTasks(data)
     setLoading(false)
   }
 
-
+  function openAdd() {
+    setEditTask(null)
+    setForm(BLANK_FORM)
+    setModal(true)
+  }
 
   function openEdit(task) {
     setEditTask(task)
-    setForm({ title: task.title, category: task.category, priority: task.priority, assignee: task.assignee, due_date: task.due_date || '' })
+    setForm({
+      title:    task.title,
+      category: task.category,
+      priority: task.priority,
+      assignee: task.assignee || '',
+      due_date: task.due_date || '',
+    })
     setModal(true)
+  }
+
+  function closeModal() {
+    setModal(false)
+    setEditTask(null)
+    setForm(BLANK_FORM)
   }
 
   async function saveTask() {
@@ -45,13 +67,17 @@ export default function Checklist() {
       setTasks(ts => ts.map(t => t.id === editTask.id ? { ...t, ...form } : t))
       await supabase.from('checklist_tasks').update(form).eq('id', editTask.id)
     } else {
-      const maxPos = tasks.filter(t => t.col === 'todo').reduce((m, t) => Math.max(m, t.position), 0)
-      const { data } = await supabase.from('checklist_tasks').insert([{ ...form, col: 'todo', position: maxPos + 1 }]).select().single()
+      const maxPos = tasks
+        .filter(t => t.col === 'todo')
+        .reduce((m, t) => Math.max(m, t.position || 0), 0)
+      const { data } = await supabase
+        .from('checklist_tasks')
+        .insert([{ ...form, col: 'todo', position: maxPos + 1 }])
+        .select()
+        .single()
       if (data) setTasks(ts => [...ts, data])
     }
-    setModal(false)
-    setEditTask(null)
-    setForm({ title:'', category:'general', priority:'medium', assignee:'B', due_date:'' })
+    closeModal()
     setSaving(false)
   }
 
@@ -71,6 +97,7 @@ export default function Checklist() {
   function onDrop(e, col)     { e.preventDefault(); if (dragId.current) moveTask(dragId.current, col); setOverCol(null) }
 
   const byCol = col => tasks.filter(t => t.col === col)
+  const assignee = val => ASSIGNEES.find(a => a.value === val)
 
   return (
     <div className="page-content">
@@ -79,7 +106,7 @@ export default function Checklist() {
           <h1 className="page-title">Checklist</h1>
           <p className="page-subtitle">Drag tasks between columns to update status</p>
         </div>
-        <button className="cl-add-btn" onClick={() => { setEditTask(null); setForm({ title:'', category:'general', priority:'medium', assignee:'B', due_date:'' }); setModal(true) }}>+ Add task</button>
+        <button className="cl-add-btn" onClick={openAdd}>+ Add task</button>
       </div>
 
       {loading ? (
@@ -119,7 +146,11 @@ export default function Checklist() {
                     <div className={`cl-dot cl-dot-${task.priority}`} title={task.priority} />
                     <span className={`cl-tag cl-tag-${task.category}`}>{task.category}</span>
                     {task.due_date && <span className="cl-due">{task.due_date}</span>}
-                    <div className={`cl-assignee ${ASSIGNEES.find(a => a.value === task.assignee)?.cls}`}>{task.assignee}</div>
+                    {task.assignee && (
+                      <div className={`cl-assignee ${assignee(task.assignee)?.cls || ''}`}>
+                        {task.assignee}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -129,7 +160,7 @@ export default function Checklist() {
       )}
 
       {modal && (
-        <div className="cl-overlay" onClick={e => e.target === e.currentTarget && setModal(false)}>
+        <div className="cl-overlay" onClick={e => e.target === e.currentTarget && closeModal()}>
           <div className="cl-modal">
             <div className="cl-modal-title">{editTask ? 'Edit task' : 'New task'}</div>
             <div className="cl-field">
@@ -171,7 +202,7 @@ export default function Checklist() {
               </div>
             </div>
             <div className="cl-modal-actions">
-              <button className="cl-btn-cancel" onClick={() => { setModal(false); setEditTask(null) }}>Cancel</button>
+              <button className="cl-btn-cancel" onClick={closeModal}>Cancel</button>
               <button className="cl-btn-save" onClick={saveTask} disabled={saving}>
                 {saving ? 'Saving…' : editTask ? 'Save changes' : 'Add task'}
               </button>
@@ -292,7 +323,7 @@ export default function Checklist() {
         }
         .cl-a-p { background:#EEEDFE; color:#3C3489; }
         .cl-a-j { background:#FBEAF0; color:#72243E; }
-        .cl-a-b { background:#E1F5EE; color:#085041; }
+        .cl-a-w { background:#FAEEDA; color:#633806; }
 
         .cl-overlay {
           position: fixed; inset: 0;
