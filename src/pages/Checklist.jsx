@@ -12,11 +12,12 @@ const ASSIGNEES = [
 const PRIORITIES = ['high','medium','low']
 
 export default function Checklist() {
-  const [tasks,   setTasks]   = useState([])
-  const [loading, setLoading] = useState(true)
-  const [modal,   setModal]   = useState(false)
-  const [saving,  setSaving]  = useState(false)
-  const [form,    setForm]    = useState({ title:'', category:'general', priority:'medium', assignee:'B', due_date:'' })
+  const [tasks,     setTasks]     = useState([])
+  const [loading,   setLoading]   = useState(true)
+  const [modal,     setModal]     = useState(false)
+  const [editTask,  setEditTask]  = useState(null)
+  const [saving,    setSaving]    = useState(false)
+  const [form,      setForm]      = useState({ title:'', category:'general', priority:'medium', assignee:'B', due_date:'' })
   const dragId  = useRef(null)
   const [overCol, setOverCol] = useState(null)
 
@@ -29,14 +30,28 @@ export default function Checklist() {
     setLoading(false)
   }
 
-  async function addTask() {
+
+
+  function openEdit(task) {
+    setEditTask(task)
+    setForm({ title: task.title, category: task.category, priority: task.priority, assignee: task.assignee, due_date: task.due_date || '' })
+    setModal(true)
+  }
+
+  async function saveTask() {
     if (!form.title.trim()) return
     setSaving(true)
-    const maxPos = tasks.filter(t => t.col === 'todo').reduce((m, t) => Math.max(m, t.position), 0)
-    const { data } = await supabase.from('checklist_tasks').insert([{ ...form, col: 'todo', position: maxPos + 1 }]).select().single()
-    if (data) setTasks(ts => [...ts, data])
-    setForm({ title:'', category:'general', priority:'medium', assignee:'B', due_date:'' })
+    if (editTask) {
+      setTasks(ts => ts.map(t => t.id === editTask.id ? { ...t, ...form } : t))
+      await supabase.from('checklist_tasks').update(form).eq('id', editTask.id)
+    } else {
+      const maxPos = tasks.filter(t => t.col === 'todo').reduce((m, t) => Math.max(m, t.position), 0)
+      const { data } = await supabase.from('checklist_tasks').insert([{ ...form, col: 'todo', position: maxPos + 1 }]).select().single()
+      if (data) setTasks(ts => [...ts, data])
+    }
     setModal(false)
+    setEditTask(null)
+    setForm({ title:'', category:'general', priority:'medium', assignee:'B', due_date:'' })
     setSaving(false)
   }
 
@@ -64,7 +79,7 @@ export default function Checklist() {
           <h1 className="page-title">Checklist</h1>
           <p className="page-subtitle">Drag tasks between columns to update status</p>
         </div>
-        <button className="cl-add-btn" onClick={() => setModal(true)}>+ Add task</button>
+        <button className="cl-add-btn" onClick={() => { setEditTask(null); setForm({ title:'', category:'general', priority:'medium', assignee:'B', due_date:'' }); setModal(true) }}>+ Add task</button>
       </div>
 
       {loading ? (
@@ -94,10 +109,11 @@ export default function Checklist() {
                   draggable
                   onDragStart={e => onDragStart(e, task.id)}
                   onDragEnd={onDragEnd}
+                  onClick={() => openEdit(task)}
                 >
                   <div className="cl-card-top">
                     <span className="cl-card-title">{task.title}</span>
-                    <button className="cl-delete" onClick={() => deleteTask(task.id)}>×</button>
+                    <button className="cl-delete" onClick={e => { e.stopPropagation(); deleteTask(task.id) }}>×</button>
                   </div>
                   <div className="cl-meta">
                     <div className={`cl-dot cl-dot-${task.priority}`} title={task.priority} />
@@ -115,14 +131,14 @@ export default function Checklist() {
       {modal && (
         <div className="cl-overlay" onClick={e => e.target === e.currentTarget && setModal(false)}>
           <div className="cl-modal">
-            <div className="cl-modal-title">New task</div>
+            <div className="cl-modal-title">{editTask ? 'Edit task' : 'New task'}</div>
             <div className="cl-field">
               <label>Task</label>
               <input
                 autoFocus
                 value={form.title}
                 onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && addTask()}
+                onKeyDown={e => e.key === 'Enter' && saveTask()}
                 placeholder="What needs to be done?"
               />
             </div>
@@ -155,9 +171,9 @@ export default function Checklist() {
               </div>
             </div>
             <div className="cl-modal-actions">
-              <button className="cl-btn-cancel" onClick={() => setModal(false)}>Cancel</button>
-              <button className="cl-btn-save" onClick={addTask} disabled={saving}>
-                {saving ? 'Saving…' : 'Add task'}
+              <button className="cl-btn-cancel" onClick={() => { setModal(false); setEditTask(null) }}>Cancel</button>
+              <button className="cl-btn-save" onClick={saveTask} disabled={saving}>
+                {saving ? 'Saving…' : editTask ? 'Save changes' : 'Add task'}
               </button>
             </div>
           </div>
